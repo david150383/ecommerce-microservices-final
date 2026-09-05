@@ -108,6 +108,13 @@ export function createApp() {
     createServiceProxy(config.productServiceUrl, "products"),
   );
 
+  // Inventory routes (optional auth at gateway for stock queries, downstream RBAC for reservations and adjustments)
+  app.use(
+    "/inventory",
+    optionalAuthenticate,
+    createServiceProxy(config.inventoryServiceUrl, "inventory"),
+  );
+
   // 6. 404 Route Handler
   app.use((req, res) => {
     const reqId = (req.headers["x-request-id"] as string) || "unknown";

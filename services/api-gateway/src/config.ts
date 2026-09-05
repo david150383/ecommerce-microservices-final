@@ -7,6 +7,7 @@ const envSchema = z.object({
 
   AUTH_SERVICE_URL: z.string().url().default("http://localhost:3001"),
   PRODUCT_SERVICE_URL: z.string().url().default("http://localhost:3002"),
+  INVENTORY_SERVICE_URL: z.string().url().default("http://localhost:3004"),
 
   REDIS_URL: z.string().default("redis://localhost:6379"),
 
@@ -32,6 +33,7 @@ export const config = {
   nodeEnv: env.NODE_ENV,
   authServiceUrl: env.AUTH_SERVICE_URL,
   productServiceUrl: env.PRODUCT_SERVICE_URL,
+  inventoryServiceUrl: env.INVENTORY_SERVICE_URL,
   redisUrl: env.REDIS_URL,
   jwt: {
     publicKeyPath: env.JWT_PUBLIC_KEY_PATH,
