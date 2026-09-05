@@ -3,6 +3,18 @@ import { Request, Response, NextFunction } from "express";
 import { AuthService } from "../services/auth.service.js";
 import { AuthenticatedRequest } from "../authenticate.middleware.js";
 import { config } from "../../../config.js";
+import { sendSuccess, sendCreated } from "../../../shared/utils/response.util.js";
+import { UnauthorizedError } from "../errors/auth.errors.js";
+import {
+  RegisterResponseData,
+  LoginResponseData,
+  RefreshResponseData,
+  MeResponseData,
+} from "../types/user.types.js";
+import {
+  ApiResponse,
+  ApiErrorResponse,
+} from "../../../shared/types/api.types.js";
 
 const REFRESH_TOKEN_COOKIE = "refresh_token";
 
@@ -11,32 +23,44 @@ export class AuthController {
 
   private readonly refreshCookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: config.nodeEnv === "production",
     sameSite: "lax" as const,
     path: "/auth",
     maxAge: config.jwt.refreshTokenTtlSeconds * 1000,
   };
 
-  public register = async (req: Request, res: Response, next: NextFunction) => {
+  public register = async (
+    req: Request,
+    res: Response<ApiResponse<RegisterResponseData>>,
+    next: NextFunction,
+  ): Promise<Response | void> => {
     try {
       const user = await this.authService.register(req.body);
-      res.status(201).json({
-        message: "User registered successfully",
-        data: {
+
+      return sendCreated(
+        res,
+        {
           user: {
             id: user.id,
             email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
             role: user.role,
             createdAt: user.createdAt,
           },
         },
-      });
+        "User registered successfully",
+      );
     } catch (error) {
       return next(error);
     }
   };
 
-  public login = async (req: Request, res: Response, next: NextFunction) => {
+  public login = async (
+    req: Request,
+    res: Response<ApiResponse<LoginResponseData>>,
+    next: NextFunction,
+  ): Promise<Response | void> => {
     try {
       const result = await this.authService.login(req.body);
 
@@ -46,41 +70,51 @@ export class AuthController {
         this.refreshCookieOptions,
       );
 
-      res.status(200).json({
-        message: "Login successful",
-        data: {
+      return sendSuccess(
+        res,
+        {
           accessToken: result.accessToken,
           expiresIn: config.jwt.accessTokenTtlSeconds,
           user: {
             id: result.user.id,
             email: result.user.email,
+            firstName: result.user.firstName,
+            lastName: result.user.lastName,
             role: result.user.role,
           },
         },
+        "Login successful",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  public me = async (
+    req: AuthenticatedRequest,
+    res: Response<ApiResponse<MeResponseData>>,
+    next: NextFunction,
+  ): Promise<Response | void> => {
+    try {
+      return sendSuccess(res, {
+        user: req.user,
       });
     } catch (error) {
       return next(error);
     }
   };
 
-  public me = async (req: AuthenticatedRequest, res: Response) => {
-    res.status(200).json({
-      data: {
-        user: req.user,
-      },
-    });
-  };
-  public refresh = async (req: Request, res: Response, next: NextFunction) => {
+  public refresh = async (
+    req: Request,
+    res: Response<ApiResponse<RefreshResponseData>>,
+    next: NextFunction,
+  ): Promise<Response | void> => {
     try {
-      const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
+      const refreshToken =
+        req.cookies?.[REFRESH_TOKEN_COOKIE] || req.body?.refreshToken;
 
       if (!refreshToken) {
-        res.status(401).json({
-          message: "Refresh token is required.",
-          data: null,
-        });
-
-        return;
+        throw new UnauthorizedError("Refresh token is required.");
       }
 
       const result = await this.authService.refresh(refreshToken);
@@ -91,28 +125,34 @@ export class AuthController {
         this.refreshCookieOptions,
       );
 
-      res.status(200).json({
-        message: "Token refreshed successfully",
-        data: {
+      return sendSuccess(
+        res,
+        {
           accessToken: result.accessToken,
           expiresIn: config.jwt.accessTokenTtlSeconds,
         },
-      });
+        "Token refreshed successfully",
+      );
     } catch (error) {
       return next(error);
     }
   };
 
-  public logout = async (req: Request, res: Response, next: NextFunction) => {
+  public logout = async (
+    req: Request,
+    res: Response<void | ApiErrorResponse>,
+    next: NextFunction,
+  ): Promise<Response | void> => {
     try {
-      const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
+      const refreshToken =
+        req.cookies?.[REFRESH_TOKEN_COOKIE] || req.body?.refreshToken;
 
       if (refreshToken) {
         await this.authService.logout(refreshToken);
       }
       res.clearCookie(REFRESH_TOKEN_COOKIE, this.refreshCookieOptions);
 
-      res.status(204).send();
+      return res.status(204).send();
     } catch (error) {
       return next(error);
     }
@@ -120,15 +160,19 @@ export class AuthController {
 
   public logoutAll = async (
     req: AuthenticatedRequest,
-    res: Response,
+    res: Response<void | ApiErrorResponse>,
     next: NextFunction,
-  ) => {
+  ): Promise<Response | void> => {
     try {
-      await this.authService.logoutAll(req.user!.id);
+      if (!req.user?.id) {
+        throw new UnauthorizedError("Authentication required.");
+      }
+
+      await this.authService.logoutAll(req.user.id);
 
       res.clearCookie(REFRESH_TOKEN_COOKIE, this.refreshCookieOptions);
-      
-      res.status(204).send();
+
+      return res.status(204).send();
     } catch (error) {
       return next(error);
     }

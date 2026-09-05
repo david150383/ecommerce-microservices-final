@@ -1,3 +1,4 @@
+import { PoolClient } from "pg";
 import { pool } from "../../../db.js";
 import { User, UserRow } from "../types/user.types.js";
 import { EmailAlreadyExistsError } from "../errors/auth.errors.js";
@@ -7,23 +8,27 @@ function mapUser(row: UserRow): User {
   return {
     id: row.id,
     email: row.email,
+    firstName: row.first_name,
+    lastName: row.last_name,
     passwordHash: row.password_hash,
     role: row.role,
+    isActive: row.is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
 export class UserRepository {
-  async findByEmail(email: string): Promise<User | null> {
-    const result = await pool.query(
+  async findByEmail(email: string, client?: PoolClient): Promise<User | null> {
+    const executor = client ?? pool;
+    const result = await executor.query(
       `
-      SELECT *
+      SELECT id, email, first_name, last_name, password_hash, role, is_active, created_at, updated_at
       FROM users
       WHERE email = $1
       LIMIT 1
       `,
-      [email],
+      [email.toLowerCase()],
     );
 
     if (result.rowCount === 0) {
@@ -33,10 +38,11 @@ export class UserRepository {
     return mapUser(result.rows[0]);
   }
 
-  async findById(id: string): Promise<User | null> {
-    const result = await pool.query(
+  async findById(id: string, client?: PoolClient): Promise<User | null> {
+    const executor = client ?? pool;
+    const result = await executor.query(
       `
-      SELECT *
+      SELECT id, email, first_name, last_name, password_hash, role, is_active, created_at, updated_at
       FROM users
       WHERE id = $1
       LIMIT 1
@@ -51,13 +57,17 @@ export class UserRepository {
     return mapUser(result.rows[0]);
   }
 
-  async create(data: Omit<RegisterInput, 'password'> & { password_hash: string }): Promise<User> {
+  async create(
+    data: Omit<RegisterInput, "password"> & { password_hash: string },
+    client?: PoolClient,
+  ): Promise<User> {
+    const executor = client ?? pool;
     try {
-      const result = await pool.query(
+      const result = await executor.query(
         `
         INSERT INTO users (email, password_hash, first_name, last_name, role)
         VALUES ($1, $2, $3, $4, $5)
-        RETURNING *;
+        RETURNING id, email, first_name, last_name, password_hash, role, is_active, created_at, updated_at;
       `,
         [
           data.email.toLowerCase(),

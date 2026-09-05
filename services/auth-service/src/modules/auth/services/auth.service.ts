@@ -4,6 +4,7 @@ import {
   EmailAlreadyExistsError,
   InvalidCredentialsError,
   InvalidRefreshTokenError,
+  AccountInactiveError,
 } from "../errors/auth.errors.js";
 import { JwtService } from "./jwt.service.js";
 import { RefreshSessionService } from "./refresh-session.service.js";
@@ -17,7 +18,6 @@ export class AuthService {
   ) {}
 
   async register(input: RegisterInput) {
-
     const existing = await this.users.findByEmail(input.email);
 
     if (existing) {
@@ -40,11 +40,14 @@ export class AuthService {
   }
 
   async login(input: LoginInput) {
-
     const user = await this.users.findByEmail(input.email);
 
     if (!user) {
       throw new InvalidCredentialsError();
+    }
+
+    if (!user.isActive) {
+      throw new AccountInactiveError();
     }
 
     const validPassword = await argon2.verify(user.passwordHash, input.password);
@@ -81,6 +84,10 @@ export class AuthService {
       throw new InvalidRefreshTokenError();
     }
 
+    if (!user.isActive) {
+      throw new AccountInactiveError();
+    }
+
     const accessToken = await this.jwtService.createAccessToken({
       id: user.id,
       role: user.role,
@@ -92,9 +99,11 @@ export class AuthService {
       refreshTokenExpiresAt: result.refreshTokenExpiresAt,
     };
   }
+
   async logout(refreshToken: string) {
     await this.refreshSessions.revoke(refreshToken);
   }
+
   async logoutAll(userId: string) {
     await this.refreshSessions.revokeAllSessions(userId);
   }

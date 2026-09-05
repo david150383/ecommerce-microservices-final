@@ -1,18 +1,28 @@
 import { Request, Response, NextFunction } from "express";
+import { logger } from "../logger/logger.js";
 
-export function logger(req: Request, res: Response, next: NextFunction) {
+export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
+  const reqId = req.headers["x-request-id"] as string;
 
   res.on("finish", () => {
-    console.log(
-      JSON.stringify({
-        requestId: req.headers["x-request-id"],
-        method: req.method,
-        path: req.originalUrl,
-        status: res.statusCode,
-        durationMs: Date.now() - start,
-      }),
-    );
+    const durationMs = Date.now() - start;
+    const context = {
+      requestId: reqId,
+      method: req.method,
+      path: req.originalUrl || req.url,
+      statusCode: res.statusCode,
+      durationMs,
+      ip: req.ip || req.socket.remoteAddress,
+    };
+
+    if (res.statusCode >= 500) {
+      logger.error("Gateway Request Error", undefined, context);
+    } else if (res.statusCode >= 400) {
+      logger.warn("Gateway Client Request Error", context);
+    } else {
+      logger.info("Gateway Request Completed", context);
+    }
   });
 
   next();

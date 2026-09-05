@@ -20,25 +20,21 @@ export async function authenticate(
     const authorization = req.headers.authorization;
 
     if (!authorization) {
-      next(
+      return next(
         new UnauthorizedError(
           'Missing or malformed Authorization header. Expected "Bearer <token>".',
         ),
       );
-      return;
-      return res.status(401).json({
-        error: "UNAUTHORIZED",
-        message: "Authentication required.",
-      });
     }
 
     const [scheme, token] = authorization.split(" ");
 
     if (scheme !== "Bearer" || !token) {
-      return res.status(401).json({
-        error: "UNAUTHORIZED",
-        message: "Invalid authorization header.",
-      });
+      return next(
+        new UnauthorizedError(
+          'Invalid authorization header format. Expected "Bearer <token>".',
+        ),
+      );
     }
 
     const user = await jwtVerifier.verifyAccessToken(token);
@@ -46,13 +42,7 @@ export async function authenticate(
     req.user = user;
 
     return next();
-  } catch (e) {
-    console.log(e);
-    console.log("sohin");
-    console.log(req.headers.authorization);
-    return res.status(401).json({
-      error: "UNAUTHORIZED",
-      message: "Invalid or expired access token.",
-    });
+  } catch (_error) {
+    return next(new UnauthorizedError("Invalid or expired access token."));
   }
 }

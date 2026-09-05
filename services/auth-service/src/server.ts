@@ -1,50 +1,84 @@
-import "dotenv/config";
-import express from "express";
-import cookieParser from "cookie-parser";
+import { createApp } from "./app.js";
 import { config } from "./config.js";
-import { pool } from "./db.js";
-import authRoutes from "./modules/auth/routes/auth.routes.js";
-import { errorHandler } from "./middleware/error-handler.middleware.js";
+import { pool, closeDbPool } from "./db.js";
+import { logger } from "./shared/logger/logger.js";
+import type { Server } from "node:http";
 
-const app = express();
+const app = createApp();
 
-app.use(express.json());
-app.use(cookieParser());
-app.use("/auth", authRoutes);
-
-app.get("/health", async (_req, res) => {
-  try {
-    const result = await pool.query("SELECT NOW()");
-
-    res.json({
-      service: "auth-service",
-      status: "ok",
-      database: "connected",
-      time: result.rows[0].now,
-    });
-  } catch {
-    res.status(500).json({
-      service: "auth-service",
-      status: "error",
-      database: "disconnected",
-    });
-  }
-});
-app.use(errorHandler);
+let server: Server | null = null;
+let isShuttingDown = false;
 
 async function start() {
   try {
+    // 1. Verify Database Connectivity
     await pool.query("SELECT 1");
-
-    console.log("Connected to PostgreSQL");
-
-    app.listen(config.port, () => {
-      console.log(`Auth service running on port ${config.port}`);
+    logger.info("Connected to PostgreSQL successfully", {
+      host: config.db.host,
+      database: config.db.database,
     });
+
+    // 2. Start HTTP Server
+    server = app.listen(config.port, () => {
+      logger.info(`Auth service running on port ${config.port}`, {
+        port: config.port,
+        nodeEnv: config.nodeEnv,
+      });
+    });
+
+    // Keep-alive timeout for connection reuse behind load balancers/gateways
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
   } catch (error) {
-    console.error(error);
+    logger.error("Failed to start Auth service", error);
     process.exit(1);
   }
 }
+
+// Graceful Shutdown Coordinator
+async function shutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  logger.info(`Received ${signal}. Initiating graceful shutdown...`);
+
+  const shutdownTimeout = setTimeout(() => {
+    logger.error("Graceful shutdown timed out. Forcing termination.");
+    process.exit(1);
+  }, 10000);
+
+  try {
+    if (server) {
+      await new Promise<void>((resolve, reject) => {
+        server!.close((err) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+      logger.info("HTTP server closed to new connections");
+    }
+
+    await closeDbPool();
+
+    clearTimeout(shutdownTimeout);
+    logger.info("Auth service shut down cleanly");
+    process.exit(0);
+  } catch (error) {
+    logger.error("Error during shutdown", error);
+    process.exit(1);
+  }
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled Promise Rejection", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught Exception", error);
+  shutdown("uncaughtException");
+});
 
 start();

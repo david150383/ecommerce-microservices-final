@@ -1,37 +1,71 @@
-import express from "express";
-import { createProxyMiddleware } from "http-proxy-middleware";
-
+import { createApp } from "./app.js";
 import { config } from "./config.js";
-import { requestId } from "./middleware/requestId.js";
-import { logger } from "./middleware/logger.js";
-import { authenticate } from "./middleware/authenticate.js";
-import { createServiceProxy } from "./proxy/createServiceProxy.js";
+import { logger } from "./logger/logger.js";
+import type { Server } from "node:http";
 
-const app = express();
+const app = createApp();
 
-app.use(requestId);
-app.use(logger);
+let server: Server | null = null;
+let isShuttingDown = false;
 
-app.get("/health", (_req, res) => {
-  res.json({
-    service: "api-gateway",
-    status: "ok",
-  });
+async function start() {
+  try {
+    server = app.listen(config.port, () => {
+      logger.info(`API Gateway running on port ${config.port}`, {
+        port: config.port,
+        nodeEnv: config.nodeEnv,
+      });
+    });
+
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
+  } catch (error) {
+    logger.error("Failed to start API Gateway", error);
+    process.exit(1);
+  }
+}
+
+async function shutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  logger.info(`Received ${signal}. Shutting down API Gateway gracefully...`);
+
+  const timeout = setTimeout(() => {
+    logger.error("Graceful shutdown timeout exceeded. Forcing exit.");
+    process.exit(1);
+  }, 10000);
+
+  try {
+    if (server) {
+      await new Promise<void>((resolve, reject) => {
+        server!.close((err) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+      logger.info("API Gateway HTTP server closed");
+    }
+
+    clearTimeout(timeout);
+    logger.info("API Gateway shut down cleanly");
+    process.exit(0);
+  } catch (error) {
+    logger.error("Error during API Gateway shutdown", error);
+    process.exit(1);
+  }
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled Promise Rejection in Gateway", reason);
 });
 
-// Public routes
-app.use(
-  "/auth",
-  createServiceProxy(config.authServiceUrl, "auth"),
-);
-
-// Example protected routes
-app.use(
-  "/products",
-  authenticate,
-  createServiceProxy(config.productServiceUrl, "products"),
-);
-
-app.listen(config.port, () => {
-  console.log(`Gateway running on ${config.port}`);
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught Exception in Gateway", error);
+  shutdown("uncaughtException");
 });
+
+start();

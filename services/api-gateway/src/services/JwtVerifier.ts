@@ -9,15 +9,14 @@ export interface AuthenticatedUser {
 }
 
 export class JwtVerifier {
-  private publicKeyPromise = this.loadPublicKey();
+  private publicKeyPromise: ReturnType<typeof importSPKI> = this.loadPublicKey();
 
-  private async loadPublicKey() {
+  private async loadPublicKey(): ReturnType<typeof importSPKI> {
     const key = await readFile(config.jwt.publicKeyPath, "utf8");
-
     return importSPKI(key, "RS256");
   }
 
-  async verify(token: string) {
+  async verify(token: string): Promise<AuthenticatedUser> {
     const key = await this.publicKeyPromise;
 
     const { payload } = await jwtVerify(token, key, {

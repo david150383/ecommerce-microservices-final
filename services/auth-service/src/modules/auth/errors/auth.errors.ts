@@ -1,6 +1,8 @@
 import { AppError, ConflictError } from "../../../shared/errors/app.error.js";
 
 export class EmailAlreadyExistsError extends ConflictError {
+  override readonly code = "EMAIL_ALREADY_EXISTS";
+
   constructor(email: string) {
     super("An account with this email already exists.", [
       {
@@ -43,6 +45,15 @@ export class UnauthorizedError extends AppError {
   readonly code = "UNAUTHORIZED";
 
   constructor(message = "Authentication credentials are invalid or missing.") {
+    super(message);
+  }
+}
+
+export class AccountInactiveError extends AppError {
+  readonly statusCode = 403;
+  readonly code = "ACCOUNT_INACTIVE";
+
+  constructor(message = "This user account has been deactivated.") {
     super(message);
   }
 }

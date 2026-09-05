@@ -1,23 +1,38 @@
 import "dotenv/config";
+import { z } from "zod";
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
+const envSchema = z.object({
+  PORT: z.coerce.number().int().positive().default(3000),
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
-  if (!value) {
-    throw new Error(`Missing ${name}`);
+  AUTH_SERVICE_URL: z.string().url().default("http://localhost:3001"),
+  PRODUCT_SERVICE_URL: z.string().url().default("http://localhost:3002"),
+
+  JWT_PUBLIC_KEY_PATH: z.string().min(1),
+  JWT_ISSUER: z.string().min(1).default("auth-service"),
+  JWT_AUDIENCE: z.string().min(1).default("ecommerce-api"),
+});
+
+const parsedEnv = envSchema.safeParse(process.env);
+
+if (!parsedEnv.success) {
+  console.error("❌ Invalid environment variables in api-gateway:");
+  for (const issue of parsedEnv.error.issues) {
+    console.error(`   ${issue.path.join(".")}: ${issue.message}`);
   }
-
-  return value;
+  process.exit(1);
 }
 
-export const config = {
-  port: Number(process.env.PORT),
+const env = parsedEnv.data;
 
-  authServiceUrl: requireEnv("AUTH_SERVICE_URL"),
-  productServiceUrl: requireEnv("PRODUCT_SERVICE_URL"),
+export const config = {
+  port: env.PORT,
+  nodeEnv: env.NODE_ENV,
+  authServiceUrl: env.AUTH_SERVICE_URL,
+  productServiceUrl: env.PRODUCT_SERVICE_URL,
   jwt: {
-    publicKeyPath: requireEnv("JWT_PUBLIC_KEY_PATH"),
-    issuer: requireEnv("JWT_ISSUER"),
-    audience: requireEnv("JWT_AUDIENCE"),
+    publicKeyPath: env.JWT_PUBLIC_KEY_PATH,
+    issuer: env.JWT_ISSUER,
+    audience: env.JWT_AUDIENCE,
   },
 };
