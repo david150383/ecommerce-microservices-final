@@ -8,7 +8,7 @@ import type { RedisReply } from "rate-limit-redis";
 import { config } from "./config.js";
 import { requestId } from "./middleware/requestId.js";
 import { requestLogger } from "./middleware/logger.js";
-import { authenticate } from "./middleware/authenticate.js";
+import { authenticate, optionalAuthenticate } from "./middleware/authenticate.js";
 import { createServiceProxy } from "./proxy/createServiceProxy.js";
 import { logger } from "./logger/logger.js";
 import { redis, checkRedisHealth } from "./redis.js";
@@ -101,10 +101,10 @@ export function createApp() {
     createServiceProxy(config.authServiceUrl, "auth"),
   );
 
-  // Protected product routes
+  // Product catalog routes (optional auth at gateway to allow public browsing, with downstream role enforcement for mutations)
   app.use(
     "/products",
-    authenticate,
+    optionalAuthenticate,
     createServiceProxy(config.productServiceUrl, "products"),
   );
 

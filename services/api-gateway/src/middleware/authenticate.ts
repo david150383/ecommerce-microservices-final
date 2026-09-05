@@ -56,3 +56,28 @@ export async function authenticate(
     );
   }
 }
+
+export async function optionalAuthenticate(
+  req: GatewayRequest,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const auth = req.headers.authorization;
+  if (!auth) {
+    return next();
+  }
+
+  const [scheme, token] = auth.split(" ");
+  if (scheme !== "Bearer" || !token) {
+    return next();
+  }
+
+  try {
+    req.user = await verifier.verify(token);
+  } catch {
+    // Proceed as unauthenticated if token is invalid or expired
+  }
+
+  return next();
+}
+
