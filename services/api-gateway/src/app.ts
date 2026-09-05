@@ -115,6 +115,13 @@ export function createApp() {
     createServiceProxy(config.inventoryServiceUrl, "inventory"),
   );
 
+  // Order routes (authenticated at gateway, downstream customer/admin enforcement)
+  app.use(
+    "/orders",
+    authenticate,
+    createServiceProxy(config.orderServiceUrl, "orders"),
+  );
+
   // 6. 404 Route Handler
   app.use((req, res) => {
     const reqId = (req.headers["x-request-id"] as string) || "unknown";
