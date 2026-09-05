@@ -122,6 +122,13 @@ export function createApp() {
     createServiceProxy(config.orderServiceUrl, "orders"),
   );
 
+  // Payment routes (authenticated at gateway, downstream customer/admin enforcement)
+  app.use(
+    "/payments",
+    authenticate,
+    createServiceProxy(config.paymentServiceUrl, "payments"),
+  );
+
   // 6. 404 Route Handler
   app.use((req, res) => {
     const reqId = (req.headers["x-request-id"] as string) || "unknown";
