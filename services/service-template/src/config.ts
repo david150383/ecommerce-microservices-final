@@ -11,6 +11,8 @@ const envSchema = z.object({
   DB_PASSWORD: z.string().min(1).default("ecommerce"),
   DB_NAME: z.string().min(1).default("service_db"),
 
+  REDIS_URL: z.string().default("redis://localhost:6379"),
+
   JWT_PUBLIC_KEY_PATH: z.string().min(1).default("../../keys/public.pem"),
   JWT_ISSUER: z.string().min(1).default("auth-service"),
   JWT_AUDIENCE: z.string().min(1).default("ecommerce-api"),
@@ -38,6 +40,7 @@ export const config = {
     password: env.DB_PASSWORD,
     database: env.DB_NAME,
   },
+  redisUrl: env.REDIS_URL,
   jwt: {
     publicKeyPath: env.JWT_PUBLIC_KEY_PATH,
     issuer: env.JWT_ISSUER,

@@ -1,6 +1,7 @@
 import { createApp } from "./app.js";
 import { config } from "./config.js";
 import { logger } from "./logger/logger.js";
+import { closeRedis } from "./redis.js";
 import type { Server } from "node:http";
 
 const app = createApp();
@@ -46,6 +47,8 @@ async function shutdown(signal: string) {
       });
       logger.info("API Gateway HTTP server closed");
     }
+
+    await closeRedis();
 
     clearTimeout(timeout);
     logger.info("API Gateway shut down cleanly");

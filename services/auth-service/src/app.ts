@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 
 import { config } from "./config.js";
 import { checkDbHealth } from "./db.js";
+import { checkRedisHealth } from "./redis.js";
 import { requestIdMiddleware } from "./middleware/request-id.middleware.js";
 import { requestLogger } from "./middleware/request-logger.middleware.js";
 import { errorHandler } from "./middleware/error-handler.middleware.js";
@@ -41,15 +42,18 @@ export function createApp() {
   });
 
   app.get("/health/ready", async (req, res) => {
-    const isDbConnected = await checkDbHealth();
+    const [isDbConnected, isRedisConnected] = await Promise.all([
+      checkDbHealth(),
+      checkRedisHealth(),
+    ]);
 
-    if (!isDbConnected) {
+    if (!isDbConnected || !isRedisConnected) {
       const reqId = (req.headers["x-request-id"] as string) || "unknown";
       return sendError(
         res,
         503,
         "SERVICE_UNAVAILABLE",
-        "Database connection unavailable",
+        `Service dependencies unavailable: DB ${isDbConnected ? "connected" : "disconnected"}, Redis ${isRedisConnected ? "connected" : "disconnected"}`,
         reqId,
       );
     }
@@ -58,6 +62,7 @@ export function createApp() {
       service: "auth-service",
       status: "ready",
       database: "connected",
+      redis: "connected",
       timestamp: new Date().toISOString(),
     });
   });

@@ -1,6 +1,7 @@
 import { createApp } from "./app.js";
 import { config } from "./config.js";
 import { pool, closeDbPool } from "./db.js";
+import { closeRedis } from "./redis.js";
 import { logger } from "./shared/logger/logger.js";
 import type { Server } from "node:http";
 
@@ -59,6 +60,7 @@ async function shutdown(signal: string) {
     }
 
     await closeDbPool();
+    await closeRedis();
 
     clearTimeout(shutdownTimeout);
     logger.info("Auth service shut down cleanly");

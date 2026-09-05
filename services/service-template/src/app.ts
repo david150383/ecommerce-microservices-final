@@ -4,6 +4,7 @@ import cors from "cors";
 
 import { config } from "./config.js";
 import { checkDbHealth } from "./db.js";
+import { checkRedisHealth } from "./redis.js";
 import { requestIdMiddleware } from "./middleware/request-id.middleware.js";
 import { requestLogger } from "./middleware/request-logger.middleware.js";
 import { errorHandler } from "./middleware/error-handler.middleware.js";
@@ -39,15 +40,18 @@ export function createApp() {
   });
 
   app.get("/health/ready", async (req, res) => {
-    const isDbConnected = await checkDbHealth();
+    const [isDbConnected, isRedisConnected] = await Promise.all([
+      checkDbHealth(),
+      checkRedisHealth(),
+    ]);
 
-    if (!isDbConnected) {
+    if (!isDbConnected || !isRedisConnected) {
       const requestId = (req.headers["x-request-id"] as string) || "unknown";
       return sendError(
         res,
         503,
         "SERVICE_UNAVAILABLE",
-        "Database connection unavailable",
+        `Service dependencies unavailable: DB ${isDbConnected ? "connected" : "disconnected"}, Redis ${isRedisConnected ? "connected" : "disconnected"}`,
         requestId,
       );
     }
@@ -56,6 +60,7 @@ export function createApp() {
       service: "service-template",
       status: "ready",
       database: "connected",
+      redis: "connected",
       timestamp: new Date().toISOString(),
     });
   });

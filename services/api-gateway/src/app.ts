@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+import type { RedisReply } from "rate-limit-redis";
 
 import { config } from "./config.js";
 import { requestId } from "./middleware/requestId.js";
@@ -9,6 +11,7 @@ import { requestLogger } from "./middleware/logger.js";
 import { authenticate } from "./middleware/authenticate.js";
 import { createServiceProxy } from "./proxy/createServiceProxy.js";
 import { logger } from "./logger/logger.js";
+import { redis, checkRedisHealth } from "./redis.js";
 import { sendSuccess, sendError } from "./shared/utils/response.util.js";
 
 export function createApp() {
@@ -27,12 +30,18 @@ export function createApp() {
   app.use(requestId);
   app.use(requestLogger);
 
-  // 3. Global Rate Limiter (100 requests per minute per IP)
+  // 3. Distributed Redis Rate Limiter (100 requests per minute per IP)
   const globalLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,
+    passOnStoreError: true, // Fail-open resilience: allow traffic if Redis blips
+    store: new RedisStore({
+      sendCommand: (...args: string[]) =>
+        redis.call(args[0]!, ...args.slice(1)) as Promise<RedisReply>,
+      prefix: "rl:gateway:",
+    }),
     handler: (req, res) => {
       const reqId = (req.headers["x-request-id"] as string) || "unknown";
       sendError(
@@ -55,10 +64,24 @@ export function createApp() {
     });
   });
 
-  app.get("/health/ready", (_req, res) => {
+  app.get("/health/ready", async (req, res) => {
+    const isRedisConnected = await checkRedisHealth();
+
+    if (!isRedisConnected) {
+      const reqId = (req.headers["x-request-id"] as string) || "unknown";
+      return sendError(
+        res,
+        503,
+        "SERVICE_UNAVAILABLE",
+        "Redis rate limiting store unavailable",
+        reqId,
+      );
+    }
+
     return sendSuccess(res, {
       service: "api-gateway",
       status: "ready",
+      redis: "connected",
       timestamp: new Date().toISOString(),
     });
   });

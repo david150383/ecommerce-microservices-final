@@ -1,5 +1,8 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+import type { RedisReply } from "rate-limit-redis";
+import { redis } from "../../../redis.js";
 import { config } from "../../../config.js";
 import { AuthController } from "../controllers/auth.controller.js";
 import { authenticate } from "../authenticate.middleware.js";
@@ -19,12 +22,18 @@ import { AuthService } from "../services/auth.service.js";
 
 const router = Router();
 
-// Rate limiting for auth mutations (30 attempts per 15 minutes per IP)
+// Distributed Redis rate limiting for auth mutations (30 attempts per 15 minutes per IP)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  passOnStoreError: true,
+  store: new RedisStore({
+    sendCommand: (...args: string[]) =>
+      redis.call(args[0]!, ...args.slice(1)) as Promise<RedisReply>,
+    prefix: "rl:auth:",
+  }),
   handler: (req, res) => {
     const requestId = (req.headers["x-request-id"] as string) || "unknown";
     sendError(
