@@ -55,17 +55,12 @@ export async function publishEvent(
     const channel = await getPublishChannel();
     const content = Buffer.from(JSON.stringify(payload));
 
-    const published = channel.publish(
-      config.rabbitmq.exchange,
-      routingKey,
-      content,
-      {
-        persistent: true,
-        contentType: "application/json",
-        timestamp: Date.now(),
-        headers,
-      },
-    );
+    const published = channel.publish(config.rabbitmq.exchange, routingKey, content, {
+      persistent: true,
+      contentType: "application/json",
+      timestamp: Date.now(),
+      headers,
+    });
 
     return published;
   } catch (error) {

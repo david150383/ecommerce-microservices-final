@@ -61,8 +61,10 @@ export interface RefreshResponseData {
 }
 
 export interface MeResponseData {
-  user: {
-    id: string;
-    role: string;
-  } | undefined;
+  user:
+    | {
+        id: string;
+        role: string;
+      }
+    | undefined;
 }

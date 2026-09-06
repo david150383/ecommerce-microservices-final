@@ -26,12 +26,7 @@ const service = new InventoryService(repository);
 const controller = new InventoryController(service);
 
 // Public / Service Queries
-router.get(
-  "/",
-  optionalAuthenticate,
-  validate(listInventoryQuerySchema, "query"),
-  controller.list,
-);
+router.get("/", optionalAuthenticate, validate(listInventoryQuerySchema, "query"), controller.list);
 
 router.get(
   "/:productId",
@@ -67,26 +62,11 @@ router.post(
 );
 
 // Order Saga Operations
-router.post(
-  "/reserve",
-  authenticate,
-  validate(reserveStockSchema, "body"),
-  controller.reserve,
-);
+router.post("/reserve", authenticate, validate(reserveStockSchema, "body"), controller.reserve);
 
-router.post(
-  "/release",
-  authenticate,
-  validate(releaseStockSchema, "body"),
-  controller.release,
-);
+router.post("/release", authenticate, validate(releaseStockSchema, "body"), controller.release);
 
-router.post(
-  "/fulfill",
-  authenticate,
-  validate(fulfillStockSchema, "body"),
-  controller.fulfill,
-);
+router.post("/fulfill", authenticate, validate(fulfillStockSchema, "body"), controller.fulfill);
 
 export default router;
 export { service as inventoryService, repository as inventoryRepository };

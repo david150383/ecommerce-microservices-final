@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { importPKCS8, SignJWT } from "jose";
 
 import { config } from "../../../config.js";
-import { UserRole } from "../schemas/auth.schema.js"
+import { UserRole } from "../schemas/auth.schema.js";
 
 export class JwtService {
   private privateKeyPromise = this.loadPrivateKey();
@@ -13,10 +13,7 @@ export class JwtService {
     return importPKCS8(privateKey, "RS256");
   }
 
-  async createAccessToken(user: {
-    id: string;
-    role: UserRole;
-  }): Promise<string> {
+  async createAccessToken(user: { id: string; role: UserRole }): Promise<string> {
     const privateKey = await this.privateKeyPromise;
 
     return new SignJWT({

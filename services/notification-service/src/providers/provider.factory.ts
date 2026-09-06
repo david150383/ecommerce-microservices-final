@@ -1,7 +1,4 @@
-import {
-  NotificationChannel,
-  NotificationProvider,
-} from "./notification.provider.interface.js";
+import { NotificationChannel, NotificationProvider } from "./notification.provider.interface.js";
 import { EmailProvider } from "./email.provider.js";
 import { SmsProvider } from "./sms.provider.js";
 import { WebhookProvider } from "./webhook.provider.js";

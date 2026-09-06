@@ -1,10 +1,6 @@
 import crypto from "crypto";
 import { OrderRepository } from "../repositories/order.repository.js";
-import {
-  OrderWithItems,
-  PaginatedOrders,
-  ListOrderFilter,
-} from "../types/order.types.js";
+import { OrderWithItems, PaginatedOrders, ListOrderFilter } from "../types/order.types.js";
 import { CreateOrderInput } from "../schemas/order.schema.js";
 import { withTransaction } from "../../../db.js";
 import {
@@ -28,10 +24,7 @@ export class OrderService {
     input: CreateOrderInput,
     providedCorrelationId?: string,
   ): Promise<OrderWithItems> {
-    const correlationId =
-      input.correlationId ||
-      providedCorrelationId ||
-      crypto.randomUUID();
+    const correlationId = input.correlationId || providedCorrelationId || crypto.randomUUID();
 
     const totalAmountCents = input.items.reduce((sum, item) => {
       return sum + item.quantity * item.unitPriceCents;
@@ -91,11 +84,7 @@ export class OrderService {
   /**
    * Fetch an order by ID, enforcing customer ownership unless admin
    */
-  async getOrder(
-    id: string,
-    customerId: string,
-    isAdmin = false,
-  ): Promise<OrderWithItems> {
+  async getOrder(id: string, customerId: string, isAdmin = false): Promise<OrderWithItems> {
     const order = await this.orderRepository.findById(id);
     if (!order) {
       throw new NotFoundError("Order", id);
@@ -156,12 +145,7 @@ export class OrderService {
 
       const cancellationReason = reason || "Order cancelled by user";
 
-      await this.orderRepository.updateStatus(
-        id,
-        "CANCELLED",
-        cancellationReason,
-        client,
-      );
+      await this.orderRepository.updateStatus(id, "CANCELLED", cancellationReason, client);
 
       // Emit outbox event for Saga compensation
       const eventId = crypto.randomUUID();
@@ -269,12 +253,7 @@ export class OrderService {
 
       if (order.status !== "CANCELLED") {
         const cancellationReason = reason || "Inventory reservation failed";
-        await this.orderRepository.updateStatus(
-          orderId,
-          "CANCELLED",
-          cancellationReason,
-          client,
-        );
+        await this.orderRepository.updateStatus(orderId, "CANCELLED", cancellationReason, client);
 
         const cancelEventId = crypto.randomUUID();
         await this.orderRepository.insertOutboxEvent(
@@ -353,11 +332,7 @@ export class OrderService {
    * Saga: Handle payment failed event
    * Transitions -> CANCELLED and emits order.cancelled so inventory releases reserved items
    */
-  async handlePaymentFailed(
-    orderId: string,
-    reason: string,
-    eventId: string,
-  ): Promise<void> {
+  async handlePaymentFailed(orderId: string, reason: string, eventId: string): Promise<void> {
     await withTransaction(async (client) => {
       const processed = await this.orderRepository.isEventProcessed(eventId, client);
       if (processed) {
@@ -379,12 +354,7 @@ export class OrderService {
 
       if (order.status !== "CANCELLED" && order.status !== "COMPLETED") {
         const cancellationReason = reason || "Payment failed";
-        await this.orderRepository.updateStatus(
-          orderId,
-          "CANCELLED",
-          cancellationReason,
-          client,
-        );
+        await this.orderRepository.updateStatus(orderId, "CANCELLED", cancellationReason, client);
 
         const cancelEventId = crypto.randomUUID();
         await this.orderRepository.insertOutboxEvent(

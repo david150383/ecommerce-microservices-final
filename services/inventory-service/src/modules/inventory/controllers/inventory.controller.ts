@@ -1,15 +1,8 @@
 import { Response, NextFunction } from "express";
 import { InventoryService } from "../services/inventory.service.js";
 import { AuthenticatedRequest } from "../../../middleware/authenticate.middleware.js";
-import {
-  sendSuccess,
-  sendCreated,
-  sendError,
-} from "../../../shared/utils/response.util.js";
-import {
-  InventoryItem,
-  InventoryReservation,
-} from "../types/inventory.types.js";
+import { sendSuccess, sendCreated, sendError } from "../../../shared/utils/response.util.js";
+import { InventoryItem, InventoryReservation } from "../types/inventory.types.js";
 import { ApiResponse } from "../../../shared/types/api.types.js";
 import {
   UpdateStockInput,
@@ -29,9 +22,7 @@ export class InventoryController {
     next: NextFunction,
   ): Promise<Response | void> => {
     try {
-      const inventory = await this.service.getInventory(
-        req.params.productId as string,
-      );
+      const inventory = await this.service.getInventory(req.params.productId as string);
       return sendSuccess(res, { inventory });
     } catch (error) {
       return next(error);
@@ -46,17 +37,11 @@ export class InventoryController {
     try {
       const query = req.query as unknown as ListInventoryQuery;
       const result = await this.service.listInventory(query);
-      return sendSuccess(
-        res,
-        { items: result.items },
-        undefined,
-        200,
-        {
-          limit: result.limit,
-          offset: result.offset,
-          total: result.total,
-        },
-      );
+      return sendSuccess(res, { items: result.items }, undefined, 200, {
+        limit: result.limit,
+        offset: result.offset,
+        total: result.total,
+      });
     } catch (error) {
       return next(error);
     }
@@ -86,10 +71,7 @@ export class InventoryController {
   ): Promise<Response | void> => {
     try {
       const { delta } = req.body as AdjustStockInput;
-      const inventory = await this.service.adjustStock(
-        req.params.productId as string,
-        delta,
-      );
+      const inventory = await this.service.adjustStock(req.params.productId as string, delta);
       return sendSuccess(res, { inventory }, "Stock adjusted successfully");
     } catch (error) {
       return next(error);
@@ -103,11 +85,7 @@ export class InventoryController {
   ): Promise<Response | void> => {
     try {
       const { orderId, productId, quantity } = req.body as ReserveStockInput;
-      const result = await this.service.reserveInventory(
-        orderId,
-        productId,
-        quantity,
-      );
+      const result = await this.service.reserveInventory(orderId, productId, quantity);
 
       if (!result.success) {
         const requestId = (req.headers["x-request-id"] as string) || "unknown";
@@ -198,9 +176,7 @@ export class InventoryController {
     next: NextFunction,
   ): Promise<Response | void> => {
     try {
-      const reservations = await this.service.listReservations(
-        req.params.orderId as string,
-      );
+      const reservations = await this.service.listReservations(req.params.orderId as string);
       return sendSuccess(res, { reservations });
     } catch (error) {
       return next(error);

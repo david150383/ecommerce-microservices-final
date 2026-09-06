@@ -73,13 +73,7 @@ export function createApp() {
 
     if (!isDbConnected) {
       const reqId = (req.headers["x-request-id"] as string) || "unknown";
-      return sendError(
-        res,
-        503,
-        "DATABASE_DISCONNECTED",
-        "Database connection failed",
-        reqId,
-      );
+      return sendError(res, 503, "DATABASE_DISCONNECTED", "Database connection failed", reqId);
     }
 
     return sendSuccess(res, {
@@ -95,13 +89,7 @@ export function createApp() {
   // 6. Catch-all 404 Route Handler
   app.use((req, res) => {
     const requestId = (req.headers["x-request-id"] as string) || "unknown";
-    sendError(
-      res,
-      404,
-      "ROUTE_NOT_FOUND",
-      `Cannot ${req.method} ${req.originalUrl}`,
-      requestId,
-    );
+    sendError(res, 404, "ROUTE_NOT_FOUND", `Cannot ${req.method} ${req.originalUrl}`, requestId);
   });
 
   // 7. Centralized Error Handler

@@ -4,15 +4,8 @@ import {
   UpdateProductInput,
   ListProductsQuery,
 } from "../schemas/product.schema.js";
-import {
-  NotFoundError,
-  ConflictError,
-} from "../../../shared/errors/app.error.js";
-import {
-  Product,
-  ListProductFilter,
-  PaginatedProducts,
-} from "../types/product.types.js";
+import { NotFoundError, ConflictError } from "../../../shared/errors/app.error.js";
+import { Product, ListProductFilter, PaginatedProducts } from "../types/product.types.js";
 
 function slugify(text: string): string {
   return text
@@ -42,10 +35,7 @@ export class ProductService {
     return product;
   }
 
-  async listProducts(
-    query: ListProductsQuery,
-    isAdmin = false,
-  ): Promise<PaginatedProducts> {
+  async listProducts(query: ListProductsQuery, isAdmin = false): Promise<PaginatedProducts> {
     const filter: ListProductFilter = {
       limit: query.limit,
       offset: query.offset,
@@ -89,10 +79,7 @@ export class ProductService {
     });
   }
 
-  async updateProduct(
-    id: string,
-    input: UpdateProductInput,
-  ): Promise<Product> {
+  async updateProduct(id: string, input: UpdateProductInput): Promise<Product> {
     const existing = await this.getProductById(id);
 
     if (input.sku && input.sku !== existing.sku) {

@@ -8,11 +8,7 @@ import { AuthController } from "../controllers/auth.controller.js";
 import { authenticate } from "../authenticate.middleware.js";
 import { validate } from "../../../middleware/validate.middleware.js";
 import { sendError } from "../../../shared/utils/response.util.js";
-import {
-  registerSchema,
-  loginSchema,
-  refreshSchema,
-} from "../schemas/auth.schema.js";
+import { registerSchema, loginSchema, refreshSchema } from "../schemas/auth.schema.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { RefreshSessionRepository } from "../repositories/refresh-session.repository.js";
 import { JwtService } from "../services/jwt.service.js";
@@ -60,26 +56,11 @@ const authService = new AuthService(users, jwtService, refreshSessions);
 const authController = new AuthController(authService);
 
 // Public Routes
-router.post(
-  "/register",
-  authLimiter,
-  validate(registerSchema, "body"),
-  authController.register,
-);
+router.post("/register", authLimiter, validate(registerSchema, "body"), authController.register);
 
-router.post(
-  "/login",
-  authLimiter,
-  validate(loginSchema, "body"),
-  authController.login,
-);
+router.post("/login", authLimiter, validate(loginSchema, "body"), authController.login);
 
-router.post(
-  "/refresh",
-  authLimiter,
-  validate(refreshSchema, "body"),
-  authController.refresh,
-);
+router.post("/refresh", authLimiter, validate(refreshSchema, "body"), authController.refresh);
 
 router.post("/logout", authController.logout);
 

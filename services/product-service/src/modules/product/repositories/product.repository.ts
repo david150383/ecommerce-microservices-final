@@ -6,14 +6,8 @@ import {
   ListProductFilter,
   PaginatedProducts,
 } from "../types/product.types.js";
-import {
-  CreateProductInput,
-  UpdateProductInput,
-} from "../schemas/product.schema.js";
-import {
-  encodeCursor,
-  decodeCursor,
-} from "../../../shared/utils/cursor.util.js";
+import { CreateProductInput, UpdateProductInput } from "../schemas/product.schema.js";
+import { encodeCursor, decodeCursor } from "../../../shared/utils/cursor.util.js";
 
 function mapProduct(row: ProductRow): Product {
   return {
@@ -34,38 +28,26 @@ function mapProduct(row: ProductRow): Product {
 export class ProductRepository {
   async findById(id: string, client?: PoolClient): Promise<Product | null> {
     const executor = client ?? pool;
-    const result = await executor.query(
-      `SELECT * FROM products WHERE id = $1 LIMIT 1`,
-      [id],
-    );
+    const result = await executor.query(`SELECT * FROM products WHERE id = $1 LIMIT 1`, [id]);
     if (result.rowCount === 0) return null;
     return mapProduct(result.rows[0]);
   }
 
   async findBySlug(slug: string, client?: PoolClient): Promise<Product | null> {
     const executor = client ?? pool;
-    const result = await executor.query(
-      `SELECT * FROM products WHERE slug = $1 LIMIT 1`,
-      [slug],
-    );
+    const result = await executor.query(`SELECT * FROM products WHERE slug = $1 LIMIT 1`, [slug]);
     if (result.rowCount === 0) return null;
     return mapProduct(result.rows[0]);
   }
 
   async findBySku(sku: string, client?: PoolClient): Promise<Product | null> {
     const executor = client ?? pool;
-    const result = await executor.query(
-      `SELECT * FROM products WHERE sku = $1 LIMIT 1`,
-      [sku],
-    );
+    const result = await executor.query(`SELECT * FROM products WHERE sku = $1 LIMIT 1`, [sku]);
     if (result.rowCount === 0) return null;
     return mapProduct(result.rows[0]);
   }
 
-  async list(
-    filter: ListProductFilter = {},
-    client?: PoolClient,
-  ): Promise<PaginatedProducts> {
+  async list(filter: ListProductFilter = {}, client?: PoolClient): Promise<PaginatedProducts> {
     const executor = client ?? pool;
     const conditions: string[] = [];
     const values: any[] = [];
@@ -92,14 +74,11 @@ export class ProductRepository {
     // Optional cursor condition for keyset pagination
     if (filter.cursor) {
       const decoded = decodeCursor(filter.cursor);
-      conditions.push(
-        `(created_at, id) < ($${paramIndex++}, $${paramIndex++})`,
-      );
+      conditions.push(`(created_at, id) < ($${paramIndex++}, $${paramIndex++})`);
       values.push(decoded.createdAt, decoded.id);
     }
 
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const limit = filter.limit ?? 50;
 
@@ -142,15 +121,11 @@ export class ProductRepository {
     const dataResult = await executor.query(dataQuery, dataValues);
 
     const hasNextPage = dataResult.rows.length > limit;
-    const items = hasNextPage
-      ? dataResult.rows.slice(0, limit)
-      : dataResult.rows;
+    const items = hasNextPage ? dataResult.rows.slice(0, limit) : dataResult.rows;
     const products = items.map(mapProduct);
     const lastProduct = products[products.length - 1];
     const nextCursor =
-      hasNextPage && lastProduct
-        ? encodeCursor(lastProduct.createdAt, lastProduct.id)
-        : null;
+      hasNextPage && lastProduct ? encodeCursor(lastProduct.createdAt, lastProduct.id) : null;
 
     return {
       products,
@@ -161,10 +136,7 @@ export class ProductRepository {
     };
   }
 
-  async create(
-    data: CreateProductInput & { slug: string },
-    client?: PoolClient,
-  ): Promise<Product> {
+  async create(data: CreateProductInput & { slug: string }, client?: PoolClient): Promise<Product> {
     const executor = client ?? pool;
     const result = await executor.query(
       `
@@ -186,11 +158,7 @@ export class ProductRepository {
     return mapProduct(result.rows[0]);
   }
 
-  async update(
-    id: string,
-    data: UpdateProductInput,
-    client?: PoolClient,
-  ): Promise<Product | null> {
+  async update(id: string, data: UpdateProductInput, client?: PoolClient): Promise<Product | null> {
     const executor = client ?? pool;
     const fields: string[] = [];
     const values: any[] = [];
@@ -250,9 +218,7 @@ export class ProductRepository {
 
   async delete(id: string, client?: PoolClient): Promise<boolean> {
     const executor = client ?? pool;
-    const result = await executor.query(`DELETE FROM products WHERE id = $1`, [
-      id,
-    ]);
+    const result = await executor.query(`DELETE FROM products WHERE id = $1`, [id]);
     return (result.rowCount ?? 0) > 0;
   }
 }

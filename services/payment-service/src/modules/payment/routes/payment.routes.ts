@@ -19,20 +19,10 @@ const service = new PaymentService(repository);
 const controller = new PaymentController(service);
 
 // Process payment
-router.post(
-  "/",
-  authenticate,
-  validate(processPaymentSchema, "body"),
-  controller.process,
-);
+router.post("/", authenticate, validate(processPaymentSchema, "body"), controller.process);
 
 // List payments
-router.get(
-  "/",
-  authenticate,
-  validate(listPaymentsQuerySchema, "query"),
-  controller.list,
-);
+router.get("/", authenticate, validate(listPaymentsQuerySchema, "query"), controller.list);
 
 // Get payment by order ID
 router.get(
@@ -43,12 +33,7 @@ router.get(
 );
 
 // Get payment by ID
-router.get(
-  "/:id",
-  authenticate,
-  validate(paymentIdParamSchema, "params"),
-  controller.getById,
-);
+router.get("/:id", authenticate, validate(paymentIdParamSchema, "params"), controller.getById);
 
 // Refund payment
 router.post(

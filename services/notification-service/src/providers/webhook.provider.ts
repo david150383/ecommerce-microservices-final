@@ -14,9 +14,7 @@ export class WebhookProvider implements NotificationProvider {
     const deliveryId = `msg_wh_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
 
     // Check if recipient is a valid HTTP URL
-    const isUrl =
-      params.recipient.startsWith("http://") ||
-      params.recipient.startsWith("https://");
+    const isUrl = params.recipient.startsWith("http://") || params.recipient.startsWith("https://");
 
     if (isUrl) {
       try {

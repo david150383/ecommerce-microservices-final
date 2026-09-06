@@ -116,10 +116,9 @@ export class OrderRepository {
     const executor = client ?? pool;
     const lockClause = forUpdate ? " FOR UPDATE" : "";
 
-    const orderResult = await executor.query(
-      `SELECT * FROM orders WHERE id = $1${lockClause}`,
-      [id],
-    );
+    const orderResult = await executor.query(`SELECT * FROM orders WHERE id = $1${lockClause}`, [
+      id,
+    ]);
     if (orderResult.rowCount === 0) return null;
     const order = mapOrder(orderResult.rows[0]);
 
@@ -135,10 +134,7 @@ export class OrderRepository {
     };
   }
 
-  async list(
-    filter: ListOrderFilter = {},
-    client?: PoolClient,
-  ): Promise<PaginatedOrders> {
+  async list(filter: ListOrderFilter = {}, client?: PoolClient): Promise<PaginatedOrders> {
     const executor = client ?? pool;
     const conditions: string[] = [];
     const values: any[] = [];
@@ -154,8 +150,7 @@ export class OrderRepository {
       values.push(filter.status);
     }
 
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const countResult = await executor.query(
       `SELECT COUNT(*) AS total FROM orders ${whereClause}`,
@@ -188,14 +183,15 @@ export class OrderRepository {
         `SELECT * FROM order_items WHERE order_id = ANY($1::uuid[]) ORDER BY created_at ASC`,
         [orderIds],
       );
-      itemsMap = itemsResult.rows
-        .map(mapOrderItem)
-        .reduce((acc, item) => {
+      itemsMap = itemsResult.rows.map(mapOrderItem).reduce(
+        (acc, item) => {
           const list = acc[item.orderId] ?? [];
           list.push(item);
           acc[item.orderId] = list;
           return acc;
-        }, {} as Record<string, OrderItem[]>);
+        },
+        {} as Record<string, OrderItem[]>,
+      );
     }
 
     return {
@@ -268,15 +264,11 @@ export class OrderRepository {
     return mapOutbox(result.rows[0]);
   }
 
-  async isEventProcessed(
-    eventId: string,
-    client?: PoolClient,
-  ): Promise<boolean> {
+  async isEventProcessed(eventId: string, client?: PoolClient): Promise<boolean> {
     const executor = client ?? pool;
-    const result = await executor.query(
-      `SELECT 1 FROM inbox_events WHERE event_id = $1 LIMIT 1`,
-      [eventId],
-    );
+    const result = await executor.query(`SELECT 1 FROM inbox_events WHERE event_id = $1 LIMIT 1`, [
+      eventId,
+    ]);
     return (result.rowCount ?? 0) > 0;
   }
 

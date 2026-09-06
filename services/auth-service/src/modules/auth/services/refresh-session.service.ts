@@ -1,12 +1,9 @@
 import crypto from "node:crypto";
 import { RefreshSessionRepository } from "../repositories/refresh-session.repository.js";
-import { RefreshTokenService } from "./refresh-token.service.js"
+import { RefreshTokenService } from "./refresh-token.service.js";
 import { withTransaction } from "../../../db.js";
-import {
-  InvalidRefreshTokenError,
-  RefreshTokenReuseDetectedError,
-} from "../errors/auth.errors.js";
-import { CreateSessionInput } from "../types/user.types.js"
+import { InvalidRefreshTokenError, RefreshTokenReuseDetectedError } from "../errors/auth.errors.js";
+import { CreateSessionInput } from "../types/user.types.js";
 export class RefreshSessionService {
   constructor(
     private readonly repository: RefreshSessionRepository,

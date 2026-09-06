@@ -7,11 +7,7 @@ import {
   ListInventoryFilter,
   PaginatedInventory,
 } from "../types/inventory.types.js";
-import {
-  NotFoundError,
-  BadRequestError,
-  ConflictError,
-} from "../../../shared/errors/app.error.js";
+import { NotFoundError, BadRequestError } from "../../../shared/errors/app.error.js";
 import { logger } from "../../../logger/logger.js";
 
 export class InventoryService {
@@ -25,9 +21,7 @@ export class InventoryService {
     return item;
   }
 
-  async listInventory(
-    filter: ListInventoryFilter = {},
-  ): Promise<PaginatedInventory> {
+  async listInventory(filter: ListInventoryFilter = {}): Promise<PaginatedInventory> {
     return this.repository.list(filter);
   }
 
@@ -35,16 +29,9 @@ export class InventoryService {
     return this.repository.listReservationsByOrderId(orderId);
   }
 
-  async setStock(
-    productId: string,
-    availableQuantity: number,
-  ): Promise<InventoryItem> {
+  async setStock(productId: string, availableQuantity: number): Promise<InventoryItem> {
     return withTransaction(async (client) => {
-      const item = await this.repository.upsertInventory(
-        productId,
-        availableQuantity,
-        client,
-      );
+      const item = await this.repository.upsertInventory(productId, availableQuantity, client);
 
       await this.repository.insertOutboxEvent(
         {
@@ -69,11 +56,7 @@ export class InventoryService {
 
   async adjustStock(productId: string, delta: number): Promise<InventoryItem> {
     return withTransaction(async (client) => {
-      const existing = await this.repository.findByProductId(
-        productId,
-        true,
-        client,
-      );
+      const existing = await this.repository.findByProductId(productId, true, client);
       if (!existing) {
         throw new NotFoundError("Inventory for product", productId);
       }
@@ -84,12 +67,7 @@ export class InventoryService {
         );
       }
 
-      const updated = await this.repository.adjustQuantities(
-        productId,
-        delta,
-        0,
-        client,
-      );
+      const updated = await this.repository.adjustQuantities(productId, delta, 0, client);
 
       await this.repository.insertOutboxEvent(
         {
@@ -129,10 +107,7 @@ export class InventoryService {
   }> {
     return withTransaction(async (client) => {
       if (eventId) {
-        const isProcessed = await this.repository.isEventProcessed(
-          eventId,
-          client,
-        );
+        const isProcessed = await this.repository.isEventProcessed(eventId, client);
         if (isProcessed) {
           logger.info(
             `Event ${eventId} already processed in inbox. Returning existing reservation.`,
@@ -148,22 +123,13 @@ export class InventoryService {
       }
 
       // Check if order reservation already exists
-      const existingRes = await this.repository.findReservation(
-        orderId,
-        productId,
-        true,
-        client,
-      );
+      const existingRes = await this.repository.findReservation(orderId, productId, true, client);
       if (existingRes && existingRes.status === "RESERVED") {
         return { success: true, reservation: existingRes };
       }
 
       // Pessimistic lock on product inventory
-      const item = await this.repository.findByProductId(
-        productId,
-        true,
-        client,
-      );
+      const item = await this.repository.findByProductId(productId, true, client);
 
       if (!item || item.availableQuantity < quantity) {
         const reason = !item ? "PRODUCT_NOT_FOUND" : "INSUFFICIENT_STOCK";
@@ -195,24 +161,14 @@ export class InventoryService {
         );
 
         if (eventId) {
-          await this.repository.insertInboxEvent(
-            eventId,
-            "order.created",
-            "order.created",
-            client,
-          );
+          await this.repository.insertInboxEvent(eventId, "order.created", "order.created", client);
         }
 
         return { success: false, reason };
       }
 
       // Decrement available, increment reserved
-      await this.repository.adjustQuantities(
-        productId,
-        -quantity,
-        quantity,
-        client,
-      );
+      await this.repository.adjustQuantities(productId, -quantity, quantity, client);
       const reservation = await this.repository.createReservation(
         orderId,
         productId,
@@ -240,12 +196,7 @@ export class InventoryService {
       );
 
       if (eventId) {
-        await this.repository.insertInboxEvent(
-          eventId,
-          "order.created",
-          "order.created",
-          client,
-        );
+        await this.repository.insertInboxEvent(eventId, "order.created", "order.created", client);
       }
 
       return { success: true, reservation };
@@ -262,10 +213,7 @@ export class InventoryService {
   ): Promise<{ success: boolean; reservation?: InventoryReservation | undefined }> {
     return withTransaction(async (client) => {
       if (eventId) {
-        const isProcessed = await this.repository.isEventProcessed(
-          eventId,
-          client,
-        );
+        const isProcessed = await this.repository.isEventProcessed(eventId, client);
         if (isProcessed) {
           const existingRes = await this.repository.findReservation(
             orderId,
@@ -277,12 +225,7 @@ export class InventoryService {
         }
       }
 
-      const res = await this.repository.findReservation(
-        orderId,
-        productId,
-        true,
-        client,
-      );
+      const res = await this.repository.findReservation(orderId, productId, true, client);
       if (!res || res.status !== "RESERVED") {
         logger.warn("Reservation not found or already closed for release", {
           orderId,
@@ -293,12 +236,7 @@ export class InventoryService {
       }
 
       // Return reserved quantity back to available pool
-      await this.repository.adjustQuantities(
-        productId,
-        res.quantity,
-        -res.quantity,
-        client,
-      );
+      await this.repository.adjustQuantities(productId, res.quantity, -res.quantity, client);
       const updated = await this.repository.updateReservationStatus(
         orderId,
         productId,
@@ -346,10 +284,7 @@ export class InventoryService {
   ): Promise<{ success: boolean; reservation?: InventoryReservation | undefined }> {
     return withTransaction(async (client) => {
       if (eventId) {
-        const isProcessed = await this.repository.isEventProcessed(
-          eventId,
-          client,
-        );
+        const isProcessed = await this.repository.isEventProcessed(eventId, client);
         if (isProcessed) {
           const existingRes = await this.repository.findReservation(
             orderId,
@@ -361,12 +296,7 @@ export class InventoryService {
         }
       }
 
-      const res = await this.repository.findReservation(
-        orderId,
-        productId,
-        true,
-        client,
-      );
+      const res = await this.repository.findReservation(orderId, productId, true, client);
       if (!res || res.status !== "RESERVED") {
         logger.warn("Reservation not found or not in RESERVED state", {
           orderId,
@@ -377,12 +307,7 @@ export class InventoryService {
       }
 
       // Deduct permanently from reserved quantity
-      await this.repository.adjustQuantities(
-        productId,
-        0,
-        -res.quantity,
-        client,
-      );
+      await this.repository.adjustQuantities(productId, 0, -res.quantity, client);
       const updated = await this.repository.updateReservationStatus(
         orderId,
         productId,

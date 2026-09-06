@@ -22,26 +22,14 @@ export class InboxConsumer {
       await this.channel.assertQueue(queueName, { durable: true });
 
       // Bind saga event patterns
-      await this.channel.bindQueue(
-        queueName,
-        config.rabbitmq.exchange,
-        "inventory.reserved",
-      );
+      await this.channel.bindQueue(queueName, config.rabbitmq.exchange, "inventory.reserved");
       await this.channel.bindQueue(
         queueName,
         config.rabbitmq.exchange,
         "inventory.reservation_failed",
       );
-      await this.channel.bindQueue(
-        queueName,
-        config.rabbitmq.exchange,
-        "payment.completed",
-      );
-      await this.channel.bindQueue(
-        queueName,
-        config.rabbitmq.exchange,
-        "payment.failed",
-      );
+      await this.channel.bindQueue(queueName, config.rabbitmq.exchange, "payment.completed");
+      await this.channel.bindQueue(queueName, config.rabbitmq.exchange, "payment.failed");
 
       logger.info(`Order inbox consumer listening on queue '${queueName}'`);
 
@@ -91,9 +79,7 @@ export class InboxConsumer {
     const payload = JSON.parse(rawContent);
 
     const eventId =
-      (msg.properties.headers?.["eventId"] as string) ||
-      payload.eventId ||
-      payload.id;
+      (msg.properties.headers?.["eventId"] as string) || payload.eventId || payload.id;
 
     logger.info(`Order inbox received event: ${routingKey}`, {
       eventId,
@@ -133,11 +119,7 @@ export class InboxConsumer {
       case "payment.failed": {
         const { orderId, reason } = payload;
         if (orderId) {
-          await this.orderService.handlePaymentFailed(
-            orderId,
-            reason || "Payment failed",
-            eventId,
-          );
+          await this.orderService.handlePaymentFailed(orderId, reason || "Payment failed", eventId);
         }
         break;
       }

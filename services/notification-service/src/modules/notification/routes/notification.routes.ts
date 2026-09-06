@@ -2,10 +2,7 @@ import { Router } from "express";
 import { NotificationController } from "../controllers/notification.controller.js";
 import { NotificationService } from "../services/notification.service.js";
 import { NotificationRepository } from "../repositories/notification.repository.js";
-import {
-  authenticate,
-  requireRole,
-} from "../../../middleware/authenticate.middleware.js";
+import { authenticate, requireRole } from "../../../middleware/authenticate.middleware.js";
 import { validate } from "../../../middleware/validate.middleware.js";
 import {
   sendNotificationSchema,
@@ -50,12 +47,7 @@ router.post(
 );
 
 // 5. Single Notification Lookup
-router.get(
-  "/:id",
-  authenticate,
-  validate(notificationIdParamSchema, "params"),
-  controller.getById,
-);
+router.get("/:id", authenticate, validate(notificationIdParamSchema, "params"), controller.getById);
 
 export { repository, service, controller };
 export default router;

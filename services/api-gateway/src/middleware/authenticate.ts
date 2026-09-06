@@ -47,13 +47,7 @@ export async function authenticate(
 
     return next();
   } catch (_error) {
-    return sendError(
-      res,
-      401,
-      "UNAUTHORIZED",
-      "Invalid or expired access token.",
-      reqId,
-    );
+    return sendError(res, 401, "UNAUTHORIZED", "Invalid or expired access token.", reqId);
   }
 }
 
@@ -80,4 +74,3 @@ export async function optionalAuthenticate(
 
   return next();
 }
-

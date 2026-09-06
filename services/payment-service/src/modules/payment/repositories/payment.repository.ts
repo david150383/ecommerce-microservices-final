@@ -84,11 +84,7 @@ export class PaymentRepository {
     return mapPayment(result.rows[0]!);
   }
 
-  async findById(
-    id: string,
-    forUpdate = false,
-    client?: PoolClient,
-  ): Promise<Payment | null> {
+  async findById(id: string, forUpdate = false, client?: PoolClient): Promise<Payment | null> {
     const executor = client ?? pool;
     const lockClause = forUpdate ? " FOR UPDATE" : "";
     const result = await executor.query<PaymentRow>(
@@ -114,10 +110,7 @@ export class PaymentRepository {
     return mapPayment(result.rows[0]);
   }
 
-  async findByIdempotencyKey(
-    idempotencyKey: string,
-    client?: PoolClient,
-  ): Promise<Payment | null> {
+  async findByIdempotencyKey(idempotencyKey: string, client?: PoolClient): Promise<Payment | null> {
     const executor = client ?? pool;
     const result = await executor.query<PaymentRow>(
       `SELECT * FROM payments WHERE idempotency_key = $1`,
@@ -148,21 +141,13 @@ export class PaymentRepository {
       WHERE id = $1
       RETURNING *
       `,
-      [
-        id,
-        status,
-        updateData.transactionId ?? null,
-        updateData.failureReason ?? null,
-      ],
+      [id, status, updateData.transactionId ?? null, updateData.failureReason ?? null],
     );
     if (result.rowCount === 0 || !result.rows[0]) return null;
     return mapPayment(result.rows[0]);
   }
 
-  async list(
-    filter: ListPaymentFilter = {},
-    client?: PoolClient,
-  ): Promise<PaginatedPayments> {
+  async list(filter: ListPaymentFilter = {}, client?: PoolClient): Promise<PaginatedPayments> {
     const executor = client ?? pool;
     const conditions: string[] = [];
     const values: any[] = [];
@@ -183,8 +168,7 @@ export class PaymentRepository {
       values.push(filter.status);
     }
 
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const countResult = await executor.query(
       `SELECT COUNT(*) AS total FROM payments ${whereClause}`,
@@ -250,15 +234,11 @@ export class PaymentRepository {
     return mapOutbox(result.rows[0]);
   }
 
-  async isEventProcessed(
-    eventId: string,
-    client?: PoolClient,
-  ): Promise<boolean> {
+  async isEventProcessed(eventId: string, client?: PoolClient): Promise<boolean> {
     const executor = client ?? pool;
-    const result = await executor.query(
-      `SELECT 1 FROM inbox_events WHERE event_id = $1 LIMIT 1`,
-      [eventId],
-    );
+    const result = await executor.query(`SELECT 1 FROM inbox_events WHERE event_id = $1 LIMIT 1`, [
+      eventId,
+    ]);
     return (result.rowCount ?? 0) > 0;
   }
 

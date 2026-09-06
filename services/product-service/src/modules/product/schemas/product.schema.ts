@@ -1,25 +1,14 @@
 import { z } from "zod";
 
 export const createProductSchema = z.object({
-  sku: z
-    .string()
-    .trim()
-    .min(1, "SKU is required")
-    .max(64, "SKU cannot exceed 64 characters"),
-  name: z
-    .string()
-    .trim()
-    .min(1, "Name is required")
-    .max(255, "Name cannot exceed 255 characters"),
+  sku: z.string().trim().min(1, "SKU is required").max(64, "SKU cannot exceed 64 characters"),
+  name: z.string().trim().min(1, "Name is required").max(255, "Name cannot exceed 255 characters"),
   slug: z
     .string()
     .trim()
     .min(1)
     .max(255)
-    .regex(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must be lowercase alphanumeric and single hyphens",
-    )
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase alphanumeric and single hyphens")
     .optional(),
   description: z.string().trim().default(""),
   priceCents: z.coerce
@@ -48,10 +37,7 @@ export const updateProductSchema = z.object({
     .trim()
     .min(1)
     .max(255)
-    .regex(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must be lowercase alphanumeric and single hyphens",
-    )
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase alphanumeric and single hyphens")
     .optional(),
   description: z.string().trim().optional(),
   priceCents: z.coerce

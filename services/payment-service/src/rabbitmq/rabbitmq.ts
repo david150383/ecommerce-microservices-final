@@ -56,17 +56,12 @@ export async function publishEvent(
     const channel = await getPublishChannel();
     const content = Buffer.from(JSON.stringify(payload));
 
-    const published = channel.publish(
-      config.rabbitmq.exchange,
-      routingKey,
-      content,
-      {
-        persistent: true,
-        contentType: "application/json",
-        headers,
-        timestamp: Date.now(),
-      },
-    );
+    const published = channel.publish(config.rabbitmq.exchange, routingKey, content, {
+      persistent: true,
+      contentType: "application/json",
+      headers,
+      timestamp: Date.now(),
+    });
 
     logger.info(`Event published: ${routingKey}`, {
       exchange: config.rabbitmq.exchange,

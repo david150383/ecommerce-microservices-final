@@ -1,6 +1,6 @@
 import { PoolClient } from "pg";
 import { pool } from "../../../db.js";
-import { ClientType } from "../schemas/auth.schema.js"
+import { ClientType } from "../schemas/auth.schema.js";
 
 export interface RefreshSession {
   id: string;
@@ -69,10 +69,7 @@ export class RefreshSessionRepository {
     return mapSession(result.rows[0]);
   }
 
-  async findByTokenHash(
-    tokenHash: string,
-    client?: PoolClient,
-  ): Promise<RefreshSession | null> {
+  async findByTokenHash(tokenHash: string, client?: PoolClient): Promise<RefreshSession | null> {
     const executor = client ?? pool;
     const result = await executor.query(
       `

@@ -46,9 +46,7 @@ export function createServiceProxy(target: string, servicePrefix: string) {
             code?: string;
           }
           const netErr = err as NetworkError;
-          const isTimeout =
-            netErr.code === "ETIMEDOUT" ||
-            netErr.code === "ESOCKETTIMEDOUT";
+          const isTimeout = netErr.code === "ETIMEDOUT" || netErr.code === "ESOCKETTIMEDOUT";
           const statusCode = isTimeout ? 504 : 502;
           const errorCode = isTimeout ? "GATEWAY_TIMEOUT" : "BAD_GATEWAY";
           const message = isTimeout

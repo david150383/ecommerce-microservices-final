@@ -45,4 +45,3 @@ export interface PaginatedProducts {
   nextCursor?: string | null | undefined;
   hasNextPage: boolean;
 }
-

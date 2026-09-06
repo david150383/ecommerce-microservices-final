@@ -22,21 +22,9 @@ export class InboxConsumer {
       await this.channel.assertQueue(queueName, { durable: true });
 
       // Bind saga event patterns
-      await this.channel.bindQueue(
-        queueName,
-        config.rabbitmq.exchange,
-        "order.created",
-      );
-      await this.channel.bindQueue(
-        queueName,
-        config.rabbitmq.exchange,
-        "order.cancelled",
-      );
-      await this.channel.bindQueue(
-        queueName,
-        config.rabbitmq.exchange,
-        "payment.completed",
-      );
+      await this.channel.bindQueue(queueName, config.rabbitmq.exchange, "order.created");
+      await this.channel.bindQueue(queueName, config.rabbitmq.exchange, "order.cancelled");
+      await this.channel.bindQueue(queueName, config.rabbitmq.exchange, "payment.completed");
 
       logger.info(`Inbox consumer listening on queue '${queueName}'`);
 
@@ -86,9 +74,7 @@ export class InboxConsumer {
     const payload = JSON.parse(rawContent);
 
     const eventId =
-      (msg.properties.headers?.["eventId"] as string) ||
-      payload.eventId ||
-      payload.id;
+      (msg.properties.headers?.["eventId"] as string) || payload.eventId || payload.id;
 
     logger.info(`Inbox received event: ${routingKey}`, {
       eventId,
@@ -109,12 +95,7 @@ export class InboxConsumer {
             );
           }
         } else if (orderId && productId && quantity) {
-          await this.inventoryService.reserveInventory(
-            orderId,
-            productId,
-            quantity,
-            eventId,
-          );
+          await this.inventoryService.reserveInventory(orderId, productId, quantity, eventId);
         }
         break;
       }
@@ -124,18 +105,10 @@ export class InboxConsumer {
         const { orderId, productId, items } = payload;
         if (Array.isArray(items)) {
           for (const item of items) {
-            await this.inventoryService.releaseReservation(
-              orderId,
-              item.productId,
-              eventId,
-            );
+            await this.inventoryService.releaseReservation(orderId, item.productId, eventId);
           }
         } else if (orderId && productId) {
-          await this.inventoryService.releaseReservation(
-            orderId,
-            productId,
-            eventId,
-          );
+          await this.inventoryService.releaseReservation(orderId, productId, eventId);
         }
         break;
       }
@@ -145,18 +118,10 @@ export class InboxConsumer {
         const { orderId, productId, items } = payload;
         if (Array.isArray(items)) {
           for (const item of items) {
-            await this.inventoryService.fulfillReservation(
-              orderId,
-              item.productId,
-              eventId,
-            );
+            await this.inventoryService.fulfillReservation(orderId, item.productId, eventId);
           }
         } else if (orderId && productId) {
-          await this.inventoryService.fulfillReservation(
-            orderId,
-            productId,
-            eventId,
-          );
+          await this.inventoryService.fulfillReservation(orderId, productId, eventId);
         }
         break;
       }

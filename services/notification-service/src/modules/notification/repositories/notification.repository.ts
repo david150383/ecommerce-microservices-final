@@ -106,10 +106,7 @@ export class NotificationRepository {
     return mapNotification(result.rows[0]!);
   }
 
-  async findById(
-    id: string,
-    client?: PoolClient,
-  ): Promise<NotificationResponseDto | null> {
+  async findById(id: string, client?: PoolClient): Promise<NotificationResponseDto | null> {
     const executor = client ?? pool;
     const result = await executor.query<NotificationRow>(
       `SELECT * FROM notifications WHERE id = $1 LIMIT 1`,
@@ -159,10 +156,7 @@ export class NotificationRepository {
     return result.rows.map(mapNotification);
   }
 
-  async count(
-    filters: NotificationFilters = {},
-    client?: PoolClient,
-  ): Promise<number> {
+  async count(filters: NotificationFilters = {}, client?: PoolClient): Promise<number> {
     const executor = client ?? pool;
     const conditions: string[] = [];
     const values: any[] = [];
@@ -209,10 +203,9 @@ export class NotificationRepository {
 
   async isEventProcessed(eventId: string, client?: PoolClient): Promise<boolean> {
     const executor = client ?? pool;
-    const result = await executor.query(
-      `SELECT 1 FROM inbox_events WHERE event_id = $1 LIMIT 1`,
-      [eventId],
-    );
+    const result = await executor.query(`SELECT 1 FROM inbox_events WHERE event_id = $1 LIMIT 1`, [
+      eventId,
+    ]);
     return (result.rowCount ?? 0) > 0;
   }
 

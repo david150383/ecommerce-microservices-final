@@ -18,9 +18,7 @@ export class StripePaymentProvider implements PaymentProvider {
     });
   }
 
-  async processPayment(
-    params: ProcessPaymentParams,
-  ): Promise<ProcessPaymentResult> {
+  async processPayment(params: ProcessPaymentParams): Promise<ProcessPaymentResult> {
     try {
       logger.info("Initiating Stripe payment", {
         orderId: params.orderId,
@@ -63,8 +61,7 @@ export class StripePaymentProvider implements PaymentProvider {
         failureReason: `Stripe payment requires further action or is in status: ${paymentIntent.status}`,
       };
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Unknown Stripe payment error";
+      const errorMessage = err instanceof Error ? err.message : "Unknown Stripe payment error";
 
       logger.error("Stripe payment processing failed", err, {
         orderId: params.orderId,
@@ -79,9 +76,7 @@ export class StripePaymentProvider implements PaymentProvider {
     }
   }
 
-  async refundPayment(
-    params: RefundPaymentParams,
-  ): Promise<RefundPaymentResult> {
+  async refundPayment(params: RefundPaymentParams): Promise<RefundPaymentResult> {
     try {
       logger.info("Initiating Stripe refund", {
         transactionId: params.transactionId,
@@ -103,8 +98,7 @@ export class StripePaymentProvider implements PaymentProvider {
         refundId: refund.id,
       };
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Unknown Stripe refund error";
+      const errorMessage = err instanceof Error ? err.message : "Unknown Stripe refund error";
 
       logger.error("Stripe refund failed", err, {
         transactionId: params.transactionId,

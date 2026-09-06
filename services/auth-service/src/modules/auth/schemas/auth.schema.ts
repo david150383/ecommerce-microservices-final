@@ -5,10 +5,7 @@ export const UserRoleSchema = z.enum(["CUSTOMER", "ADMIN", "SUPPORT"]);
 export const ClientTypeSchema = z.enum(["WEB", "MOBILE", "DESKTOP"]);
 
 export const registerSchema = z.object({
-  email: z
-    .email({ message: "Invalid email address format" })
-    .trim()
-    .toLowerCase(),
+  email: z.email({ message: "Invalid email address format" }).trim().toLowerCase(),
 
   password: z
     .string()
@@ -31,10 +28,7 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z
-    .email({ message: "Invalid email address format" })
-    .trim()
-    .toLowerCase(),
+  email: z.email({ message: "Invalid email address format" }).trim().toLowerCase(),
 
   password: z.string().min(1, {
     message: "Password is required",

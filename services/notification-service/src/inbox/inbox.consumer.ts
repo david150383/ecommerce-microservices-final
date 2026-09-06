@@ -33,11 +33,7 @@ export class InboxConsumer {
       ];
 
       for (const routingKey of eventBindings) {
-        await this.channel.bindQueue(
-          queueName,
-          config.rabbitmq.exchange,
-          routingKey,
-        );
+        await this.channel.bindQueue(queueName, config.rabbitmq.exchange, routingKey);
       }
 
       logger.info(`Notification inbox consumer listening on queue '${queueName}'`, {
@@ -53,11 +49,9 @@ export class InboxConsumer {
             await this.handleMessage(msg);
             this.channel?.ack(msg);
           } catch (error) {
-            logger.error(
-              "Error processing event in notification inbox",
-              error,
-              { routingKey: msg.fields.routingKey },
-            );
+            logger.error("Error processing event in notification inbox", error, {
+              routingKey: msg.fields.routingKey,
+            });
             // Nack without requeue to prevent toxic loops
             this.channel?.nack(msg, false, false);
           }
@@ -97,8 +91,7 @@ export class InboxConsumer {
       payload.id ||
       payload.orderId;
 
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const eventId =
       typeof rawEventId === "string" && uuidRegex.test(rawEventId)
         ? rawEventId
@@ -127,23 +120,15 @@ export class InboxConsumer {
         break;
 
       case "inventory.reservation_failed":
-        await this.notificationService.handleInventoryReservationFailed(
-          payload,
-          eventId,
-        );
+        await this.notificationService.handleInventoryReservationFailed(payload, eventId);
         break;
 
       case "inventory.stock_updated":
-        await this.notificationService.handleInventoryStockUpdated(
-          payload,
-          eventId,
-        );
+        await this.notificationService.handleInventoryStockUpdated(payload, eventId);
         break;
 
       default:
-        logger.warn(
-          `Notification inbox received unhandled routing key: ${routingKey}`,
-        );
+        logger.warn(`Notification inbox received unhandled routing key: ${routingKey}`);
         break;
     }
   }

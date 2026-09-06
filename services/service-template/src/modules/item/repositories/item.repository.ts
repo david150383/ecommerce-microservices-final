@@ -18,10 +18,7 @@ function mapItem(row: ItemRow): Item {
 export class ItemRepository {
   async findById(id: string, client?: PoolClient): Promise<Item | null> {
     const executor = client ?? pool;
-    const result = await executor.query(
-      `SELECT * FROM items WHERE id = $1 LIMIT 1`,
-      [id],
-    );
+    const result = await executor.query(`SELECT * FROM items WHERE id = $1 LIMIT 1`, [id]);
     if (result.rowCount === 0) return null;
     return mapItem(result.rows[0]);
   }
@@ -35,10 +32,7 @@ export class ItemRepository {
     return result.rows.map(mapItem);
   }
 
-  async create(
-    data: CreateItemInput & { userId: string },
-    client?: PoolClient,
-  ): Promise<Item> {
+  async create(data: CreateItemInput & { userId: string }, client?: PoolClient): Promise<Item> {
     const executor = client ?? pool;
     const result = await executor.query(
       `
@@ -51,11 +45,7 @@ export class ItemRepository {
     return mapItem(result.rows[0]);
   }
 
-  async update(
-    id: string,
-    data: UpdateItemInput,
-    client?: PoolClient,
-  ): Promise<Item | null> {
+  async update(id: string, data: UpdateItemInput, client?: PoolClient): Promise<Item | null> {
     const executor = client ?? pool;
     const fields: string[] = [];
     const values: any[] = [];

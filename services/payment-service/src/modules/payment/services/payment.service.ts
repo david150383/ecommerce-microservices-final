@@ -1,14 +1,7 @@
 import crypto from "crypto";
 import { PaymentRepository } from "../repositories/payment.repository.js";
-import {
-  Payment,
-  PaginatedPayments,
-  ListPaymentFilter,
-} from "../types/payment.types.js";
-import {
-  ProcessPaymentInput,
-  RefundPaymentInput,
-} from "../schemas/payment.schema.js";
+import { Payment, PaginatedPayments, ListPaymentFilter } from "../types/payment.types.js";
+import { ProcessPaymentInput, RefundPaymentInput } from "../schemas/payment.schema.js";
 import { getPaymentProvider } from "../../../providers/provider.factory.js";
 import { withTransaction } from "../../../db.js";
 import {
@@ -32,23 +25,17 @@ export class PaymentService {
     input: ProcessPaymentInput,
     headerIdempotencyKey?: string,
   ): Promise<{ payment: Payment; isDuplicate: boolean }> {
-    const idempotencyKey =
-      input.idempotencyKey ||
-      headerIdempotencyKey ||
-      crypto.randomUUID();
+    const idempotencyKey = input.idempotencyKey || headerIdempotencyKey || crypto.randomUUID();
 
     // 1. Check idempotency key first
-    const existingByIdempotency =
-      await this.paymentRepository.findByIdempotencyKey(idempotencyKey);
+    const existingByIdempotency = await this.paymentRepository.findByIdempotencyKey(idempotencyKey);
     if (existingByIdempotency) {
       logger.info(`Idempotent payment hit for key ${idempotencyKey}`);
       return { payment: existingByIdempotency, isDuplicate: true };
     }
 
     // 2. Check if payment already exists for this order
-    const existingByOrder = await this.paymentRepository.findByOrderId(
-      input.orderId,
-    );
+    const existingByOrder = await this.paymentRepository.findByOrderId(input.orderId);
     if (existingByOrder && existingByOrder.status === "COMPLETED") {
       logger.info(`Order ${input.orderId} already completed payment`);
       return { payment: existingByOrder, isDuplicate: true };
@@ -171,19 +158,13 @@ export class PaymentService {
     isAdmin = false,
   ): Promise<Payment> {
     return withTransaction(async (client) => {
-      const payment = await this.paymentRepository.findById(
-        paymentId,
-        true,
-        client,
-      );
+      const payment = await this.paymentRepository.findById(paymentId, true, client);
       if (!payment) {
         throw new NotFoundError("Payment", paymentId);
       }
 
       if (!isAdmin && customerId && payment.customerId !== customerId) {
-        throw new ForbiddenError(
-          "You do not have permission to refund this payment.",
-        );
+        throw new ForbiddenError("You do not have permission to refund this payment.");
       }
 
       if (payment.status !== "COMPLETED") {
@@ -193,9 +174,7 @@ export class PaymentService {
       }
 
       if (!payment.transactionId) {
-        throw new BadRequestError(
-          "Missing transaction identifier for provider refund.",
-        );
+        throw new BadRequestError("Missing transaction identifier for provider refund.");
       }
 
       const provider = getPaymentProvider(payment.provider);
@@ -248,11 +227,7 @@ export class PaymentService {
     });
   }
 
-  async getPayment(
-    id: string,
-    customerId: string,
-    isAdmin = false,
-  ): Promise<Payment> {
+  async getPayment(id: string, customerId: string, isAdmin = false): Promise<Payment> {
     const payment = await this.paymentRepository.findById(id);
     if (!payment) {
       throw new NotFoundError("Payment", id);
@@ -299,26 +274,15 @@ export class PaymentService {
    * Saga: Order cancelled compensation
    * If payment was completed, trigger refund. If pending, mark failed.
    */
-  async handleOrderCancelled(
-    orderId: string,
-    reason: string,
-    eventId: string,
-  ): Promise<void> {
+  async handleOrderCancelled(orderId: string, reason: string, eventId: string): Promise<void> {
     await withTransaction(async (client) => {
-      const processed = await this.paymentRepository.isEventProcessed(
-        eventId,
-        client,
-      );
+      const processed = await this.paymentRepository.isEventProcessed(eventId, client);
       if (processed) {
         logger.debug(`Event ${eventId} already processed, skipping`);
         return;
       }
 
-      const payment = await this.paymentRepository.findByOrderId(
-        orderId,
-        true,
-        client,
-      );
+      const payment = await this.paymentRepository.findByOrderId(orderId, true, client);
 
       if (!payment) {
         logger.info(`No payment found for cancelled order ${orderId}`);
@@ -339,12 +303,7 @@ export class PaymentService {
         });
 
         if (refundResult.success) {
-          await this.paymentRepository.updateStatus(
-            payment.id,
-            "REFUNDED",
-            {},
-            client,
-          );
+          await this.paymentRepository.updateStatus(payment.id, "REFUNDED", {}, client);
 
           const outboxEventId = crypto.randomUUID();
           await this.paymentRepository.insertOutboxEvent(

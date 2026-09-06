@@ -18,10 +18,9 @@ async function ensureDatabaseExists() {
 
   try {
     await adminClient.connect();
-    const res = await adminClient.query(
-      `SELECT 1 FROM pg_database WHERE datname = $1`,
-      [config.db.database],
-    );
+    const res = await adminClient.query(`SELECT 1 FROM pg_database WHERE datname = $1`, [
+      config.db.database,
+    ]);
 
     if (res.rowCount === 0) {
       console.log(`Database '${config.db.database}' does not exist. Creating...`);
@@ -54,17 +53,14 @@ async function run() {
 
   const migrationsDir = path.join(process.cwd(), "migrations");
 
-  const files = (await fs.readdir(migrationsDir))
-    .filter((file) => file.endsWith(".sql"))
-    .sort();
+  const files = (await fs.readdir(migrationsDir)).filter((file) => file.endsWith(".sql")).sort();
 
   for (const file of files) {
     const version = file.replace(".sql", "");
 
-    const existing = await pool.query(
-      "SELECT version FROM schema_migrations WHERE version = $1",
-      [version],
-    );
+    const existing = await pool.query("SELECT version FROM schema_migrations WHERE version = $1", [
+      version,
+    ]);
 
     if (existing.rowCount) {
       console.log(`✓ Skipping ${version}`);
@@ -80,9 +76,7 @@ async function run() {
 
       await client.query(sql);
 
-      await client.query("INSERT INTO schema_migrations(version) VALUES($1)", [
-        version,
-      ]);
+      await client.query("INSERT INTO schema_migrations(version) VALUES($1)", [version]);
 
       await client.query("COMMIT");
 

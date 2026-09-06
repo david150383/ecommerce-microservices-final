@@ -89,10 +89,7 @@ export class OutboxWorker {
 
           processedCount++;
         } catch (publishErr) {
-          const errMessage =
-            publishErr instanceof Error
-              ? publishErr.message
-              : String(publishErr);
+          const errMessage = publishErr instanceof Error ? publishErr.message : String(publishErr);
           const nextRetry = event.retry_count + 1;
           const status = nextRetry >= this.maxRetries ? "FAILED" : "PENDING";
 

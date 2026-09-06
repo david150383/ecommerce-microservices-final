@@ -4,10 +4,7 @@ import { AuthenticatedRequest } from "../../../middleware/authenticate.middlewar
 import { sendSuccess, sendCreated } from "../../../shared/utils/response.util.js";
 import { UnauthorizedError } from "../../../shared/errors/app.error.js";
 import { Item } from "../types/item.types.js";
-import {
-  ApiResponse,
-  ApiErrorResponse,
-} from "../../../shared/types/api.types.js";
+import { ApiResponse, ApiErrorResponse } from "../../../shared/types/api.types.js";
 
 export class ItemController {
   constructor(private readonly service: ItemService) {}
@@ -83,11 +80,7 @@ export class ItemController {
   ): Promise<Response | void> => {
     try {
       if (!req.user) throw new UnauthorizedError();
-      await this.service.deleteItem(
-        req.params.id as string,
-        req.user.id,
-        req.user.role,
-      );
+      await this.service.deleteItem(req.params.id as string, req.user.id, req.user.role);
       return res.status(204).send();
     } catch (error) {
       return next(error);

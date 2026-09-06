@@ -23,24 +23,11 @@ const service = new ProductService(repository);
 const controller = new ProductController(service);
 
 // Public Catalog Queries
-router.get(
-  "/",
-  optionalAuthenticate,
-  validate(listProductsQuerySchema, "query"),
-  controller.list,
-);
+router.get("/", optionalAuthenticate, validate(listProductsQuerySchema, "query"), controller.list);
 
-router.get(
-  "/slug/:slug",
-  validate(productSlugParamSchema, "params"),
-  controller.getBySlug,
-);
+router.get("/slug/:slug", validate(productSlugParamSchema, "params"), controller.getBySlug);
 
-router.get(
-  "/:id",
-  validate(productIdParamSchema, "params"),
-  controller.getById,
-);
+router.get("/:id", validate(productIdParamSchema, "params"), controller.getById);
 
 // Protected Admin Management Endpoints
 router.post(

@@ -40,7 +40,6 @@ export class ForbiddenError extends AppError {
   }
 }
 
-
 export interface ValidationDetail {
   field: string;
   message: string;
@@ -69,10 +68,7 @@ export class ValidationError extends AppError<ValidationDetail[]> {
   readonly statusCode = 400;
   readonly code: string = "VALIDATION_FAILED";
 
-  constructor(
-    message = "Validation failed.",
-    details: ValidationDetail[] = [],
-  ) {
+  constructor(message = "Validation failed.", details: ValidationDetail[] = []) {
     super(message, details);
   }
 }

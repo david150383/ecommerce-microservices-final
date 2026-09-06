@@ -13,8 +13,7 @@ export class Logger {
 
   constructor(serviceName: string, level?: LogLevel) {
     this.serviceName = serviceName;
-    this.currentLevel =
-      level || (process.env.NODE_ENV === "production" ? "info" : "debug");
+    this.currentLevel = level || (process.env.NODE_ENV === "production" ? "info" : "debug");
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -44,9 +43,7 @@ export class Logger {
           name: error.name,
           message: error.message,
           stack: error.stack,
-          ...(typeof (error as any).code === "string"
-            ? { code: (error as any).code }
-            : {}),
+          ...(typeof (error as any).code === "string" ? { code: (error as any).code } : {}),
         };
       } else {
         payload.error = error;
@@ -68,21 +65,13 @@ export class Logger {
     }
   }
 
-  warn(
-    message: string,
-    context?: Record<string, unknown>,
-    error?: unknown,
-  ): void {
+  warn(message: string, context?: Record<string, unknown>, error?: unknown): void {
     if (this.shouldLog("warn")) {
       process.stderr.write(this.format("warn", message, context, error) + "\n");
     }
   }
 
-  error(
-    message: string,
-    error?: unknown,
-    context?: Record<string, unknown>,
-  ): void {
+  error(message: string, error?: unknown, context?: Record<string, unknown>): void {
     if (this.shouldLog("error")) {
       process.stderr.write(this.format("error", message, context, error) + "\n");
     }

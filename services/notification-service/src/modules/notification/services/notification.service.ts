@@ -1,10 +1,10 @@
 import crypto from "node:crypto";
-import { NotificationRepository, NotificationFilters } from "../repositories/notification.repository.js";
-import { NotificationProviderFactory } from "../../../providers/provider.factory.js";
 import {
-  NotificationResponseDto,
-  NotificationChannel,
-} from "../types/notification.types.js";
+  NotificationRepository,
+  NotificationFilters,
+} from "../repositories/notification.repository.js";
+import { NotificationProviderFactory } from "../../../providers/provider.factory.js";
+import { NotificationResponseDto } from "../types/notification.types.js";
 import { SendNotificationInput } from "../schemas/notification.schemas.js";
 import { NotFoundError } from "../../../shared/errors/app.error.js";
 import { withTransaction } from "../../../db.js";
@@ -106,7 +106,8 @@ export class NotificationService {
           ? (payload.totalAmountCents / 100).toFixed(2)
           : "0.00");
       const itemsCount = Array.isArray(payload.items) ? payload.items.length : 1;
-      const recipient = payload.customerEmail || payload.email || `customer-${customerId.slice(0, 8)}@example.com`;
+      const recipient =
+        payload.customerEmail || payload.email || `customer-${customerId.slice(0, 8)}@example.com`;
 
       const subject = `Order Confirmation #${orderId.slice(0, 8)}`;
       const body = `Thank you for your order! Your order #${orderId.slice(0, 8)} with ${itemsCount} item(s) totalling $${totalAmount} has been received and is being prepared.`;
@@ -155,7 +156,8 @@ export class NotificationService {
       const orderId = payload.orderId || "";
       const customerId = payload.customerId || "";
       const reason = payload.reason || "Order cancelled by customer or stock shortage";
-      const recipient = payload.customerEmail || payload.email || `customer-${customerId.slice(0, 8)}@example.com`;
+      const recipient =
+        payload.customerEmail || payload.email || `customer-${customerId.slice(0, 8)}@example.com`;
 
       const subject = `Order Cancellation Notice - #${orderId.slice(0, 8)}`;
       const body = `Your order #${orderId.slice(0, 8)} has been cancelled. Reason: ${reason}. Any pre-authorizations or payments have been released.`;
@@ -202,7 +204,8 @@ export class NotificationService {
       const formattedAmount = (amountCents / 100).toFixed(2);
       const currency = payload.currency || "USD";
       const transactionId = payload.transactionId || "";
-      const recipient = payload.customerEmail || payload.email || `customer-${customerId.slice(0, 8)}@example.com`;
+      const recipient =
+        payload.customerEmail || payload.email || `customer-${customerId.slice(0, 8)}@example.com`;
 
       const subject = `Payment Successful for Order #${orderId.slice(0, 8)}`;
       const body = `We have received your payment of $${formattedAmount} ${currency}. Transaction ID: ${transactionId}. Your items are on the way!`;
@@ -241,7 +244,12 @@ export class NotificationService {
         client,
       );
 
-      await this.repository.insertInboxEvent(eventId, "payment.completed", "payment.completed", client);
+      await this.repository.insertInboxEvent(
+        eventId,
+        "payment.completed",
+        "payment.completed",
+        client,
+      );
     });
   }
 
@@ -253,7 +261,8 @@ export class NotificationService {
       const orderId = payload.orderId || "";
       const customerId = payload.customerId || "";
       const reason = payload.reason || payload.failureReason || "Payment authorization declined";
-      const recipient = payload.customerEmail || payload.email || `customer-${customerId.slice(0, 8)}@example.com`;
+      const recipient =
+        payload.customerEmail || payload.email || `customer-${customerId.slice(0, 8)}@example.com`;
 
       const subject = `Action Required: Payment Failed for Order #${orderId.slice(0, 8)}`;
       const body = `Your payment could not be processed. Reason: ${reason}. Please update your payment method to complete the order.`;
@@ -297,7 +306,8 @@ export class NotificationService {
       const orderId = payload.orderId || "";
       const customerId = payload.customerId || "";
       const reason = payload.reason || "Insufficient stock";
-      const recipient = payload.phoneNumber || `+1555${Math.floor(1000000 + Math.random() * 9000000)}`;
+      const recipient =
+        payload.phoneNumber || `+1555${Math.floor(1000000 + Math.random() * 9000000)}`;
 
       const subject = `Out of Stock Notice for Order #${orderId.slice(0, 8)}`;
       const body = `Urgent: Items in your order #${orderId.slice(0, 8)} are currently out of stock (${reason}). Your order has been cancelled and refunded.`;
@@ -372,7 +382,11 @@ export class NotificationService {
             subject,
             body,
             status: delivery.success ? "DELIVERED" : "FAILED",
-            metadata: { productId, availableQuantity: available, deliveryMetadata: delivery.deliveryMetadata },
+            metadata: {
+              productId,
+              availableQuantity: available,
+              deliveryMetadata: delivery.deliveryMetadata,
+            },
             errorMessage: delivery.error || null,
             deliveredAt: delivery.deliveredAt || new Date(),
           },

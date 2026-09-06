@@ -29,11 +29,7 @@ export class NotificationController {
       }
 
       // Customer notifications matching current user ID
-      const notifications = await this.service.getUserNotifications(
-        req.user.id,
-        limit,
-        offset,
-      );
+      const notifications = await this.service.getUserNotifications(req.user.id, limit, offset);
 
       return sendSuccess(res, notifications, undefined, 200, {
         count: notifications.length,
@@ -110,9 +106,7 @@ export class NotificationController {
         throw new UnauthorizedError("Authentication required");
       }
 
-      const notification = await this.service.getNotificationById(
-        req.params.id as string,
-      );
+      const notification = await this.service.getNotificationById(req.params.id as string);
 
       // Enforce ownership unless admin
       if (req.user.role !== "ADMIN" && notification.userId !== req.user.id) {

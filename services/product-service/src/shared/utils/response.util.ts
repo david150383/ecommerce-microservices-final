@@ -1,9 +1,5 @@
 import { Response } from "express";
-import {
-  ApiSuccessResponse,
-  ApiErrorResponse,
-  ApiErrorDetail,
-} from "../types/api.types.js";
+import { ApiSuccessResponse, ApiErrorResponse, ApiErrorDetail } from "../types/api.types.js";
 
 export function sendSuccess<T>(
   res: Response,

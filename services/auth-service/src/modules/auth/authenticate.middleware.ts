@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 
 import { JwtVerifier } from "./services/jwt-verifier.service.js";
-import { UnauthorizedError } from "./errors/auth.errors.js"
+import { UnauthorizedError } from "./errors/auth.errors.js";
 const jwtVerifier = new JwtVerifier();
 
 export interface AuthenticatedRequest extends Request {
@@ -11,11 +11,7 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-export async function authenticate(
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction,
-) {
+export async function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     const authorization = req.headers.authorization;
 
@@ -31,9 +27,7 @@ export async function authenticate(
 
     if (scheme !== "Bearer" || !token) {
       return next(
-        new UnauthorizedError(
-          'Invalid authorization header format. Expected "Bearer <token>".',
-        ),
+        new UnauthorizedError('Invalid authorization header format. Expected "Bearer <token>".'),
       );
     }
 

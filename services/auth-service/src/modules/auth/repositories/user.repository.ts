@@ -80,12 +80,7 @@ export class UserRepository {
 
       return mapUser(result.rows[0]);
     } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === "object" &&
-        "code" in error &&
-        error.code === "23505"
-      ) {
+      if (error && typeof error === "object" && "code" in error && error.code === "23505") {
         throw new EmailAlreadyExistsError(data.email);
       }
 

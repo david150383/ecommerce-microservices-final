@@ -1,15 +1,9 @@
 import { Response, NextFunction } from "express";
 import { ProductService } from "../services/product.service.js";
 import { AuthenticatedRequest } from "../../../middleware/authenticate.middleware.js";
-import {
-  sendSuccess,
-  sendCreated,
-} from "../../../shared/utils/response.util.js";
+import { sendSuccess, sendCreated } from "../../../shared/utils/response.util.js";
 import { Product } from "../types/product.types.js";
-import {
-  ApiResponse,
-  ApiErrorResponse,
-} from "../../../shared/types/api.types.js";
+import { ApiResponse, ApiErrorResponse } from "../../../shared/types/api.types.js";
 import { ListProductsQuery } from "../schemas/product.schema.js";
 
 export class ProductController {
@@ -25,19 +19,13 @@ export class ProductController {
       const isAdmin = req.user?.role === "ADMIN";
       const result = await this.service.listProducts(query, isAdmin);
 
-      return sendSuccess(
-        res,
-        { products: result.products },
-        undefined,
-        200,
-        {
-          limit: result.limit,
-          ...(result.offset !== undefined ? { offset: result.offset } : {}),
-          ...(result.total !== undefined ? { total: result.total } : {}),
-          nextCursor: result.nextCursor,
-          hasNextPage: result.hasNextPage,
-        },
-      );
+      return sendSuccess(res, { products: result.products }, undefined, 200, {
+        limit: result.limit,
+        ...(result.offset !== undefined ? { offset: result.offset } : {}),
+        ...(result.total !== undefined ? { total: result.total } : {}),
+        nextCursor: result.nextCursor,
+        hasNextPage: result.hasNextPage,
+      });
     } catch (error) {
       return next(error);
     }
@@ -62,9 +50,7 @@ export class ProductController {
     next: NextFunction,
   ): Promise<Response | void> => {
     try {
-      const product = await this.service.getProductBySlug(
-        req.params.slug as string,
-      );
+      const product = await this.service.getProductBySlug(req.params.slug as string);
       return sendSuccess(res, { product });
     } catch (error) {
       return next(error);
@@ -90,10 +76,7 @@ export class ProductController {
     next: NextFunction,
   ): Promise<Response | void> => {
     try {
-      const product = await this.service.updateProduct(
-        req.params.id as string,
-        req.body,
-      );
+      const product = await this.service.updateProduct(req.params.id as string, req.body);
       return sendSuccess(res, { product }, "Product updated successfully");
     } catch (error) {
       return next(error);

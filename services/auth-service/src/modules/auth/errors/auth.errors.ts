@@ -3,7 +3,7 @@ import { AppError, ConflictError } from "../../../shared/errors/app.error.js";
 export class EmailAlreadyExistsError extends ConflictError {
   override readonly code = "EMAIL_ALREADY_EXISTS";
 
-  constructor(email: string) {
+  constructor(_email: string) {
     super("An account with this email already exists.", [
       {
         field: "email",

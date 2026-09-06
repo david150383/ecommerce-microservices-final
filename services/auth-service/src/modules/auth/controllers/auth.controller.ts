@@ -11,10 +11,7 @@ import {
   RefreshResponseData,
   MeResponseData,
 } from "../types/user.types.js";
-import {
-  ApiResponse,
-  ApiErrorResponse,
-} from "../../../shared/types/api.types.js";
+import { ApiResponse, ApiErrorResponse } from "../../../shared/types/api.types.js";
 
 const REFRESH_TOKEN_COOKIE = "refresh_token";
 
@@ -64,11 +61,7 @@ export class AuthController {
     try {
       const result = await this.authService.login(req.body);
 
-      res.cookie(
-        REFRESH_TOKEN_COOKIE,
-        result.refreshToken,
-        this.refreshCookieOptions,
-      );
+      res.cookie(REFRESH_TOKEN_COOKIE, result.refreshToken, this.refreshCookieOptions);
 
       return sendSuccess(
         res,
@@ -110,8 +103,7 @@ export class AuthController {
     next: NextFunction,
   ): Promise<Response | void> => {
     try {
-      const refreshToken =
-        req.cookies?.[REFRESH_TOKEN_COOKIE] || req.body?.refreshToken;
+      const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE] || req.body?.refreshToken;
 
       if (!refreshToken) {
         throw new UnauthorizedError("Refresh token is required.");
@@ -119,11 +111,7 @@ export class AuthController {
 
       const result = await this.authService.refresh(refreshToken);
 
-      res.cookie(
-        REFRESH_TOKEN_COOKIE,
-        result.refreshToken,
-        this.refreshCookieOptions,
-      );
+      res.cookie(REFRESH_TOKEN_COOKIE, result.refreshToken, this.refreshCookieOptions);
 
       return sendSuccess(
         res,
@@ -144,8 +132,7 @@ export class AuthController {
     next: NextFunction,
   ): Promise<Response | void> => {
     try {
-      const refreshToken =
-        req.cookies?.[REFRESH_TOKEN_COOKIE] || req.body?.refreshToken;
+      const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE] || req.body?.refreshToken;
 
       if (refreshToken) {
         await this.authService.logout(refreshToken);

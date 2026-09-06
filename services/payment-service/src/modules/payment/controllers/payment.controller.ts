@@ -1,10 +1,7 @@
 import { Response, NextFunction } from "express";
 import { PaymentService } from "../services/payment.service.js";
 import { AuthenticatedRequest } from "../../../middleware/authenticate.middleware.js";
-import {
-  sendSuccess,
-  sendCreated,
-} from "../../../shared/utils/response.util.js";
+import { sendSuccess, sendCreated } from "../../../shared/utils/response.util.js";
 import { Payment } from "../types/payment.types.js";
 import { ApiResponse } from "../../../shared/types/api.types.js";
 import {
@@ -28,8 +25,7 @@ export class PaymentController {
       }
 
       const idempotencyKey =
-        (req.headers["idempotency-key"] as string) ||
-        (req.headers["x-idempotency-key"] as string);
+        (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string);
 
       const body = req.body as ProcessPaymentInput;
       const { payment, isDuplicate } = await this.service.processPayment(
@@ -70,11 +66,7 @@ export class PaymentController {
       }
 
       const isAdmin = req.user.role === "ADMIN";
-      const payment = await this.service.getPayment(
-        req.params.id as string,
-        req.user.id,
-        isAdmin,
-      );
+      const payment = await this.service.getPayment(req.params.id as string, req.user.id, isAdmin);
 
       return sendSuccess(res, { payment });
     } catch (error) {
@@ -118,23 +110,13 @@ export class PaymentController {
       const isAdmin = req.user.role === "ADMIN";
       const query = req.query as unknown as ListPaymentsQuery;
 
-      const result = await this.service.listPayments(
-        query,
-        req.user.id,
-        isAdmin,
-      );
+      const result = await this.service.listPayments(query, req.user.id, isAdmin);
 
-      return sendSuccess(
-        res,
-        { payments: result.payments },
-        undefined,
-        200,
-        {
-          limit: result.limit,
-          offset: result.offset,
-          total: result.total,
-        },
-      );
+      return sendSuccess(res, { payments: result.payments }, undefined, 200, {
+        limit: result.limit,
+        offset: result.offset,
+        total: result.total,
+      });
     } catch (error) {
       return next(error);
     }

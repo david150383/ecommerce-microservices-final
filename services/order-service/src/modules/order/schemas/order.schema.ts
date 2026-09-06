@@ -13,9 +13,7 @@ export const orderItemInputSchema = z.object({
 });
 
 export const createOrderSchema = z.object({
-  items: z
-    .array(orderItemInputSchema)
-    .min(1, "Order must contain at least one item"),
+  items: z.array(orderItemInputSchema).min(1, "Order must contain at least one item"),
   currency: z
     .string()
     .trim()
@@ -36,9 +34,7 @@ export const cancelOrderSchema = z.object({
 export const listOrdersQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(50),
   offset: z.coerce.number().int().nonnegative().default(0),
-  status: z
-    .enum(["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED", "ALL"])
-    .optional(),
+  status: z.enum(["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED", "ALL"]).optional(),
   customerId: z.string().uuid("Invalid customer ID format").optional(),
 });
 

@@ -4,11 +4,7 @@ import { ItemService } from "../services/item.service.js";
 import { ItemRepository } from "../repositories/item.repository.js";
 import { authenticate } from "../../../middleware/authenticate.middleware.js";
 import { validate } from "../../../middleware/validate.middleware.js";
-import {
-  createItemSchema,
-  updateItemSchema,
-  itemIdParamSchema,
-} from "../schemas/item.schema.js";
+import { createItemSchema, updateItemSchema, itemIdParamSchema } from "../schemas/item.schema.js";
 
 const router = Router();
 
@@ -20,12 +16,7 @@ const controller = new ItemController(service);
 router.get("/", controller.list);
 router.get("/:id", validate(itemIdParamSchema, "params"), controller.getById);
 
-router.post(
-  "/",
-  authenticate,
-  validate(createItemSchema, "body"),
-  controller.create,
-);
+router.post("/", authenticate, validate(createItemSchema, "body"), controller.create);
 
 router.patch(
   "/:id",
@@ -35,11 +26,6 @@ router.patch(
   controller.update,
 );
 
-router.delete(
-  "/:id",
-  authenticate,
-  validate(itemIdParamSchema, "params"),
-  controller.delete,
-);
+router.delete("/:id", authenticate, validate(itemIdParamSchema, "params"), controller.delete);
 
 export default router;

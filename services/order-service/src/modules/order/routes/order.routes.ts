@@ -18,28 +18,13 @@ const service = new OrderService(repository);
 const controller = new OrderController(service);
 
 // Create order
-router.post(
-  "/",
-  authenticate,
-  validate(createOrderSchema, "body"),
-  controller.create,
-);
+router.post("/", authenticate, validate(createOrderSchema, "body"), controller.create);
 
 // List orders
-router.get(
-  "/",
-  authenticate,
-  validate(listOrdersQuerySchema, "query"),
-  controller.list,
-);
+router.get("/", authenticate, validate(listOrdersQuerySchema, "query"), controller.list);
 
 // Get order by ID
-router.get(
-  "/:id",
-  authenticate,
-  validate(orderIdParamSchema, "params"),
-  controller.getById,
-);
+router.get("/:id", authenticate, validate(orderIdParamSchema, "params"), controller.getById);
 
 // Cancel order
 router.post(

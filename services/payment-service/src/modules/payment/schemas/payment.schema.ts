@@ -42,9 +42,7 @@ export const orderIdParamSchema = z.object({
 export const listPaymentsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(50),
   offset: z.coerce.number().int().nonnegative().default(0),
-  status: z
-    .enum(["PENDING", "COMPLETED", "FAILED", "REFUNDED", "ALL"])
-    .optional(),
+  status: z.enum(["PENDING", "COMPLETED", "FAILED", "REFUNDED", "ALL"]).optional(),
   customerId: z.string().uuid("Invalid customer ID format").optional(),
   orderId: z.string().uuid("Invalid order ID format").optional(),
 });

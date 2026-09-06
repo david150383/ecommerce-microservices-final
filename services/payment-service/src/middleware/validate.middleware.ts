@@ -5,11 +5,7 @@ import { ValidationError } from "../shared/errors/app.error.js";
 type RequestSource = "body" | "query" | "params";
 
 export function validate(schema: ZodType, source: RequestSource = "body") {
-  return async (
-    req: Request,
-    _res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
       const parsed = await schema.parseAsync(req[source]);
       Object.defineProperty(req, source, {
@@ -26,9 +22,7 @@ export function validate(schema: ZodType, source: RequestSource = "body") {
           message: issue.message,
           code: issue.code,
         }));
-        next(
-          new ValidationError("Request validation failed", formattedDetails),
-        );
+        next(new ValidationError("Request validation failed", formattedDetails));
       } else {
         next(error);
       }

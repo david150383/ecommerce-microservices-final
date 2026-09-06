@@ -11,9 +11,7 @@ import { logger } from "../logger/logger.js";
 export class MockPaymentProvider implements PaymentProvider {
   public readonly name = "MOCK_GATEWAY";
 
-  async processPayment(
-    params: ProcessPaymentParams,
-  ): Promise<ProcessPaymentResult> {
+  async processPayment(params: ProcessPaymentParams): Promise<ProcessPaymentResult> {
     logger.info("Processing payment with MOCK_GATEWAY", {
       orderId: params.orderId,
       amountCents: params.amountCents,
@@ -46,9 +44,7 @@ export class MockPaymentProvider implements PaymentProvider {
     };
   }
 
-  async refundPayment(
-    params: RefundPaymentParams,
-  ): Promise<RefundPaymentResult> {
+  async refundPayment(params: RefundPaymentParams): Promise<RefundPaymentResult> {
     logger.info("Processing refund with MOCK_GATEWAY", {
       transactionId: params.transactionId,
       amountCents: params.amountCents,

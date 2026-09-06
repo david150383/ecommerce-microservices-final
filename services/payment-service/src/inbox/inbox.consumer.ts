@@ -22,11 +22,7 @@ export class InboxConsumer {
       await this.channel.assertQueue(queueName, { durable: true });
 
       // Bind saga event patterns
-      await this.channel.bindQueue(
-        queueName,
-        config.rabbitmq.exchange,
-        "order.cancelled",
-      );
+      await this.channel.bindQueue(queueName, config.rabbitmq.exchange, "order.cancelled");
 
       logger.info(`Payment inbox consumer listening on queue '${queueName}'`);
 
@@ -39,11 +35,9 @@ export class InboxConsumer {
             await this.handleMessage(msg);
             this.channel?.ack(msg);
           } catch (error) {
-            logger.error(
-              "Error processing incoming saga message in payment inbox",
-              error,
-              { routingKey: msg.fields.routingKey },
-            );
+            logger.error("Error processing incoming saga message in payment inbox", error, {
+              routingKey: msg.fields.routingKey,
+            });
             // Nack without requeue to avoid poison pill loops
             this.channel?.nack(msg, false, false);
           }
@@ -78,9 +72,7 @@ export class InboxConsumer {
     const payload = JSON.parse(rawContent);
 
     const eventId =
-      (msg.properties.headers?.["eventId"] as string) ||
-      payload.eventId ||
-      payload.id;
+      (msg.properties.headers?.["eventId"] as string) || payload.eventId || payload.id;
 
     logger.info(`Payment inbox received event: ${routingKey}`, {
       eventId,

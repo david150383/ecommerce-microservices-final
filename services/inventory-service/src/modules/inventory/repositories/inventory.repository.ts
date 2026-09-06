@@ -114,10 +114,7 @@ export class InventoryRepository {
     return mapInventory(result.rows[0]);
   }
 
-  async list(
-    filter: ListInventoryFilter = {},
-    client?: PoolClient,
-  ): Promise<PaginatedInventory> {
+  async list(filter: ListInventoryFilter = {}, client?: PoolClient): Promise<PaginatedInventory> {
     const executor = client ?? pool;
     const conditions: string[] = [];
     const values: any[] = [];
@@ -128,8 +125,7 @@ export class InventoryRepository {
       values.push(filter.lowStockThreshold);
     }
 
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const countResult = await executor.query(
       `SELECT COUNT(*) AS total FROM inventory ${whereClause}`,
@@ -266,15 +262,11 @@ export class InventoryRepository {
     return mapOutbox(result.rows[0]);
   }
 
-  async isEventProcessed(
-    eventId: string,
-    client?: PoolClient,
-  ): Promise<boolean> {
+  async isEventProcessed(eventId: string, client?: PoolClient): Promise<boolean> {
     const executor = client ?? pool;
-    const result = await executor.query(
-      `SELECT 1 FROM inbox_events WHERE event_id = $1 LIMIT 1`,
-      [eventId],
-    );
+    const result = await executor.query(`SELECT 1 FROM inbox_events WHERE event_id = $1 LIMIT 1`, [
+      eventId,
+    ]);
     return (result.rowCount ?? 0) > 0;
   }
 

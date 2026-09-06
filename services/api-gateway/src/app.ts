@@ -96,10 +96,7 @@ export function createApp() {
 
   // 5. Downstream Microservice Proxies
   // Public auth routes
-  app.use(
-    "/auth",
-    createServiceProxy(config.authServiceUrl, "auth"),
-  );
+  app.use("/auth", createServiceProxy(config.authServiceUrl, "auth"));
 
   // Product catalog routes (optional auth at gateway to allow public browsing, with downstream role enforcement for mutations)
   app.use(
@@ -116,18 +113,10 @@ export function createApp() {
   );
 
   // Order routes (authenticated at gateway, downstream customer/admin enforcement)
-  app.use(
-    "/orders",
-    authenticate,
-    createServiceProxy(config.orderServiceUrl, "orders"),
-  );
+  app.use("/orders", authenticate, createServiceProxy(config.orderServiceUrl, "orders"));
 
   // Payment routes (authenticated at gateway, downstream customer/admin enforcement)
-  app.use(
-    "/payments",
-    authenticate,
-    createServiceProxy(config.paymentServiceUrl, "payments"),
-  );
+  app.use("/payments", authenticate, createServiceProxy(config.paymentServiceUrl, "payments"));
 
   // Notification routes (optional auth at gateway to verify tokens, downstream RBAC)
   app.use(
@@ -153,13 +142,7 @@ export function createApp() {
     const reqId = (req.headers["x-request-id"] as string) || "unknown";
     logger.error("Gateway Unhandled Error", err, { requestId: reqId });
 
-    sendError(
-      res,
-      500,
-      "INTERNAL_SERVER_ERROR",
-      "An internal gateway error occurred.",
-      reqId,
-    );
+    sendError(res, 500, "INTERNAL_SERVER_ERROR", "An internal gateway error occurred.", reqId);
   });
 
   return app;

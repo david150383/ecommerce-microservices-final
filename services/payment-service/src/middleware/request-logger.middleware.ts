@@ -1,11 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { logger } from "../logger/logger.js";
 
-export function requestLogger(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
+export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
   const requestId = req.headers["x-request-id"] as string;
 
