@@ -4,7 +4,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package*.json tsconfig.json ./
-RUN npm ci
+RUN npm install
 
 COPY src ./src
 COPY migrations ./migrations
@@ -19,7 +19,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/migrations ./migrations
@@ -28,4 +28,4 @@ USER node
 
 EXPOSE 3001
 
-CMD ["node", "dist/server.js"]
+CMD ["sh", "-c", "node dist/migrate.js && node dist/server.js"]
