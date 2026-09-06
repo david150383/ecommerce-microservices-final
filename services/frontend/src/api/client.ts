@@ -42,15 +42,81 @@ export function getStoredTokens(): { accessToken: string | null; refreshToken: s
   };
 }
 
-export function setStoredTokens(accessToken: string, refreshToken: string): void {
+export function setStoredTokens(accessToken: string, refreshToken?: string): void {
   localStorage.setItem('apex_access_token', accessToken);
-  localStorage.setItem('apex_refresh_token', refreshToken);
+  if (refreshToken !== undefined) {
+    if (refreshToken) {
+      localStorage.setItem('apex_refresh_token', refreshToken);
+    } else {
+      localStorage.removeItem('apex_refresh_token');
+    }
+  }
 }
 
 export function clearStoredTokens(): void {
   localStorage.removeItem('apex_access_token');
   localStorage.removeItem('apex_refresh_token');
   localStorage.removeItem('apex_user');
+}
+
+// Single in-flight refresh promise to prevent token reuse collision from concurrent 401s
+let refreshPromise: Promise<string | null> | null = null;
+
+export async function refreshAccessToken(): Promise<string | null> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const { refreshToken } = getStoredTokens();
+      // For web, refreshToken is stored in an HttpOnly cookie scoped to /auth and sent automatically.
+      // If refreshToken is present in localStorage (fallback/mobile), include it in the body.
+      const bodyPayload = refreshToken ? { refreshToken } : {};
+
+      const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(bodyPayload),
+      });
+
+      if (!refreshRes.ok) {
+        clearStoredTokens();
+        window.dispatchEvent(new CustomEvent('auth:expired'));
+        return null;
+      }
+
+      const refreshData = await refreshRes.json();
+      const newAccessToken = refreshData.data?.accessToken;
+      const newRefreshToken = refreshData.data?.refreshToken || refreshToken || '';
+
+      if (newAccessToken) {
+        setStoredTokens(newAccessToken, newRefreshToken);
+        return newAccessToken;
+      }
+
+      clearStoredTokens();
+      window.dispatchEvent(new CustomEvent('auth:expired'));
+      return null;
+    } catch {
+      clearStoredTokens();
+      window.dispatchEvent(new CustomEvent('auth:expired'));
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+async function parseResponseBody(response: Response): Promise<any> {
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return await response.json();
+  }
+  return await response.text();
 }
 
 export async function apiClient<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -73,52 +139,39 @@ export async function apiClient<T>(endpoint: string, options: RequestInit = {}):
     headers.set('traceparent', generateW3CTraceParent());
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  // Ensure cookies (including HttpOnly refresh_token) are always sent
+  const fetchOptions: RequestInit = {
     ...options,
     headers,
-  });
+    credentials: options.credentials || 'include',
+  };
 
-  // Handle Token Expiry & Refresh Rotation
+  const response = await fetch(`${BASE_URL}${endpoint}`, fetchOptions);
+
+  // Handle Token Expiry & Automatic Refresh Rotation
   if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh')) {
-    const { refreshToken } = getStoredTokens();
-    if (refreshToken) {
-      try {
-        const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken) {
+      headers.set('Authorization', `Bearer ${newAccessToken}`);
+      const retryResponse = await fetch(`${BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+        credentials: options.credentials || 'include',
+      });
 
-        if (refreshRes.ok) {
-          const refreshData = await refreshRes.json();
-          const newAccessToken = refreshData.data?.accessToken;
-          const newRefreshToken = refreshData.data?.refreshToken || refreshToken;
-          if (newAccessToken) {
-            setStoredTokens(newAccessToken, newRefreshToken);
-            headers.set('Authorization', `Bearer ${newAccessToken}`);
-          }
-          const retryRes = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
-          if (retryRes.ok) {
-            return await retryRes.json();
-          }
-        } else {
-          clearStoredTokens();
-          window.dispatchEvent(new CustomEvent('auth:expired'));
-        }
-      } catch {
-        clearStoredTokens();
-        window.dispatchEvent(new CustomEvent('auth:expired'));
+      const retryData = await parseResponseBody(retryResponse);
+
+      if (!retryResponse.ok) {
+        const errorCode = retryData?.error?.code || 'HTTP_ERROR';
+        const errorMsg = retryData?.error?.message || retryResponse.statusText || 'An unexpected error occurred';
+        throw new ApiError(retryResponse.status, errorCode, errorMsg, retryData?.error?.details, retryData?.error?.requestId);
       }
+
+      return retryData;
     }
   }
 
-  let data: any = null;
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    data = await response.json();
-  } else {
-    data = await response.text();
-  }
+  const data = await parseResponseBody(response);
 
   if (!response.ok) {
     const errorCode = data?.error?.code || 'HTTP_ERROR';

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authApi, UserProfile } from '../api/auth.api.ts';
-import { getStoredTokens, clearStoredTokens } from '../api/client.ts';
+import { clearStoredTokens } from '../api/client.ts';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -19,8 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const savedUser = localStorage.getItem('apex_user');
-    const { accessToken } = getStoredTokens();
-    if (savedUser && accessToken) {
+    if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch {
