@@ -48,6 +48,23 @@ services:
       timeout: 5s
       retries: 5
 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    container_name: ecommerce-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./otel/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "13133:13133" # Health check extension
+    healthcheck:
+      test: ["CMD", "/otelcol-contrib", "validate", "--config=/etc/otelcol-contrib/config.yaml"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # ==========================================
   # 2. BACKEND MICROSERVICES
   # ==========================================
@@ -68,6 +85,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      otel-collector:
+        condition: service_healthy
 
   product-service:
     build:
@@ -85,6 +104,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      otel-collector:
         condition: service_healthy
 
   inventory-service:
@@ -106,6 +127,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      otel-collector:
+        condition: service_healthy
 
   order-service:
     build:
@@ -125,6 +148,8 @@ services:
       redis:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      otel-collector:
         condition: service_healthy
 
   payment-service:
@@ -146,6 +171,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      otel-collector:
+        condition: service_healthy
 
   notification-service:
     build:
@@ -165,6 +192,8 @@ services:
       redis:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      otel-collector:
         condition: service_healthy
 
   # ==========================================
@@ -196,6 +225,8 @@ services:
       notification-service:
         condition: service_started
       redis:
+        condition: service_healthy
+      otel-collector:
         condition: service_healthy
 
   frontend:

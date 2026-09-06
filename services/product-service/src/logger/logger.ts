@@ -1,3 +1,5 @@
+import { trace } from "@opentelemetry/api";
+
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 const LOG_LEVELS: Record<LogLevel, number> = {
@@ -32,6 +34,16 @@ export class Logger {
       service: this.serviceName,
       message,
     };
+
+    const activeSpan = trace.getActiveSpan();
+    if (activeSpan) {
+      const spanContext = activeSpan.spanContext();
+      if (spanContext && trace.isSpanContextValid(spanContext)) {
+        payload.trace_id = spanContext.traceId;
+        payload.span_id = spanContext.spanId;
+        payload.trace_flags = spanContext.traceFlags;
+      }
+    }
 
     if (context && Object.keys(context).length > 0) {
       payload.context = context;

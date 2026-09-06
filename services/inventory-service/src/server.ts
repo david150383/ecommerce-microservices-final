@@ -1,3 +1,4 @@
+import "./instrumentation.js";
 import { createApp } from "./app.js";
 import { config } from "./config.js";
 import { pool, closeDbPool } from "./db.js";

@@ -9,5 +9,7 @@
     "rootDir": "./src",
     "outDir": "dist",
     "sourceMap": true
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests"]
 }
