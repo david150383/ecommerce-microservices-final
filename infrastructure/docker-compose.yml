@@ -1,46 +1,217 @@
 services:
+  # ==========================================
+  # 1. CORE INFRASTRUCTURE
+  # ==========================================
   postgres:
     image: postgres:16
     container_name: ecommerce-postgres
-
     restart: unless-stopped
-
-    environment:
-      POSTGRES_USER: ecommerce
-      POSTGRES_PASSWORD: ecommerce
-      POSTGRES_DB: auth_db
-
+    env_file:
+      - ./env/postgres.env
     ports:
       - "5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: ecommerce-rabbitmq
-
-    restart: unless-stopped
-
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecommerce -d auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7
     container_name: ecommerce-redis
-
     restart: unless-stopped
-
     ports:
       - "6379:6379"
-
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ecommerce-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # 2. BACKEND MICROSERVICES
+  # ==========================================
+  auth-service:
+    build:
+      context: ../services/auth-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-auth-service
+    restart: unless-stopped
+    env_file:
+      - ./env/auth-service.env
+    ports:
+      - "3001:3001"
+    volumes:
+      - ../keys:/app/keys:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  product-service:
+    build:
+      context: ../services/product-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-product-service
+    restart: unless-stopped
+    env_file:
+      - ./env/product-service.env
+    ports:
+      - "3002:3002"
+    volumes:
+      - ../keys:/app/keys:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  inventory-service:
+    build:
+      context: ../services/inventory-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-inventory-service
+    restart: unless-stopped
+    env_file:
+      - ./env/inventory-service.env
+    ports:
+      - "3004:3004"
+    volumes:
+      - ../keys:/app/keys:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  order-service:
+    build:
+      context: ../services/order-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-order-service
+    restart: unless-stopped
+    env_file:
+      - ./env/order-service.env
+    ports:
+      - "3003:3003"
+    volumes:
+      - ../keys:/app/keys:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  payment-service:
+    build:
+      context: ../services/payment-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-payment-service
+    restart: unless-stopped
+    env_file:
+      - ./env/payment-service.env
+    ports:
+      - "3005:3005"
+    volumes:
+      - ../keys:/app/keys:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: ../services/notification-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-notification-service
+    restart: unless-stopped
+    env_file:
+      - ./env/notification-service.env
+    ports:
+      - "8006:8006"
+    volumes:
+      - ../keys:/app/keys:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # ==========================================
+  # 3. API GATEWAY & FRONTEND
+  # ==========================================
+  api-gateway:
+    build:
+      context: ../services/api-gateway
+      dockerfile: Dockerfile
+    container_name: ecommerce-api-gateway
+    restart: unless-stopped
+    env_file:
+      - ./env/api-gateway.env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../keys:/app/keys:ro
+    depends_on:
+      auth-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../services/frontend
+      dockerfile: Dockerfile
+    container_name: ecommerce-frontend
+    restart: unless-stopped
+    env_file:
+      - ./env/frontend.env
+    ports:
+      - "5173:8080"
+      - "8080:8080"
+    depends_on:
+      api-gateway:
+        condition: service_started
 
 volumes:
   postgres_data:
