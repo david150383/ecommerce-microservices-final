@@ -256,10 +256,17 @@ export const adminApi = {
     };
   },
 
-  async listAllNotifications(_filters?: { channel?: string; status?: string; limit?: number }): Promise<{ data: AdminNotification[]; total: number }> {
+  async listAllNotifications(filters?: { channel?: string; status?: string; limit?: number }): Promise<{ data: AdminNotification[]; total: number }> {
+    const params = new URLSearchParams();
+    if (filters?.channel && filters.channel !== 'ALL') params.append('channel', filters.channel);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.limit) params.append('limit', String(filters.limit));
+    const query = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await apiClient<any>(`/notifications/admin${query}`);
     return {
-      data: [],
-      total: 0,
+      data: res.data || [],
+      total: res.meta?.total ?? res.data?.length ?? 0,
     };
   },
 
@@ -269,20 +276,13 @@ export const adminApi = {
     subject: string;
     body: string;
   }): Promise<{ message: string; data: AdminNotification }> {
+    const res = await apiClient<any>('/notifications/admin/dispatch', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
     return {
-      message: 'Notification queued',
-      data: {
-        id: crypto.randomUUID(),
-        eventId: crypto.randomUUID(),
-        eventType: 'notification.manual',
-        recipient: data.recipient,
-        channel: data.channel,
-        subject: data.subject,
-        body: data.body,
-        status: 'DELIVERED',
-        createdAt: new Date().toISOString(),
-        deliveredAt: new Date().toISOString(),
-      },
+      message: res.message || 'Notification dispatched',
+      data: res.data,
     };
   },
 };

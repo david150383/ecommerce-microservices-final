@@ -21,16 +21,22 @@ Each service is **autonomous and self-contained** (no shared internal code packa
                       │  - JWT Verification     │
                       └────────────┬────────────┘
                                    │
-         ┌─────────────────────────┼─────────────────────────┐
-         │                         │                         │
-         ▼                         ▼                         ▼
-┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
-│   Auth Service   │      │ Product Service  │      │  Order Service   │
-│   (Port 3001)    │      │   (Port 3002)    │      │   (Port 3003)    │
-│  - User Mgmt     │      │  - Catalog       │      │  - Orders        │
-│  - RS256 Tokens  │      │  - Pricing       │      │  - Checkout      │
-│  - Token Family  │      │                  │      │                  │
-└────────┬─────────┘      └────────┬─────────┘      └────────┬─────────┘
+        ┌──────────────┬───────────┼───────────┬──────────────┬──────────────┐
+        │              │           │           │              │              │
+        ▼              ▼           ▼           ▼              ▼              ▼
+┌──────────────┐┌──────────────┐┌──────────┐┌─────────────┐┌────────────┐┌─────────────────────┐
+│ Auth Service ││Product Service│Order Svc ││Inventory Svc││Payment Svc ││Notification Service │
+│ (Port 3001)  ││ (Port 3002)  │(Port 3003)│ (Port 3004)  │ (Port 3005) ││    (Port 8006)      │
+│  - User Mgmt ││ - Catalog    │ - Orders  │ - Stock Res. │ - Stripe/Mock│ - Multi-channel (Email│
+│  - RS256 JWT ││ - Pricing    │ - Sagas   │ - Inventory  │ - Refunds    │    SMS, Webhook)      │
+└───────┬──────┘└──────┬───────┘└────┬─────┘└──────┬──────┘└─────┬──────┘└──────────┬──────────┘
+        │              │             │             │             │                  │
+        ▼              ▼             ▼             ▼             ▼                  ▼
+┌──────────────┐┌──────────────┐┌──────────┐┌─────────────┐┌────────────┐┌─────────────────────┐
+│  PostgreSQL  ││  PostgreSQL  │PostgreSQL││ PostgreSQL  ││ PostgreSQL ││    PostgreSQL       │
+│  (auth_db)   ││ (product_db) │(order_db)││(inventory_db)│(payment_db)││ (notification_db)   │
+└──────────────┘└──────────────┘└──────────┘└─────────────┘└────────────┘└─────────────────────┘
+```��      └────────┬─────────┘      └────────┬─────────┘
          │                         │                         │
          ▼                         ▼                         ▼
 ┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐

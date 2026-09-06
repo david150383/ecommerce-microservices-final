@@ -10,6 +10,7 @@ const envSchema = z.object({
   ORDER_SERVICE_URL: z.string().url().default("http://localhost:3003"),
   INVENTORY_SERVICE_URL: z.string().url().default("http://localhost:3004"),
   PAYMENT_SERVICE_URL: z.string().url().default("http://localhost:3005"),
+  NOTIFICATION_SERVICE_URL: z.string().url().default("http://localhost:8006"),
 
   REDIS_URL: z.string().default("redis://localhost:6379"),
 
@@ -38,6 +39,7 @@ export const config = {
   orderServiceUrl: env.ORDER_SERVICE_URL,
   inventoryServiceUrl: env.INVENTORY_SERVICE_URL,
   paymentServiceUrl: env.PAYMENT_SERVICE_URL,
+  notificationServiceUrl: env.NOTIFICATION_SERVICE_URL,
   redisUrl: env.REDIS_URL,
   jwt: {
     publicKeyPath: env.JWT_PUBLIC_KEY_PATH,

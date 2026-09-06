@@ -129,6 +129,13 @@ export function createApp() {
     createServiceProxy(config.paymentServiceUrl, "payments"),
   );
 
+  // Notification routes (optional auth at gateway to verify tokens, downstream RBAC)
+  app.use(
+    "/notifications",
+    optionalAuthenticate,
+    createServiceProxy(config.notificationServiceUrl, "notifications"),
+  );
+
   // 6. 404 Route Handler
   app.use((req, res) => {
     const reqId = (req.headers["x-request-id"] as string) || "unknown";

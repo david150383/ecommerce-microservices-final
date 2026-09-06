@@ -29,6 +29,10 @@ export default defineConfig({
         target: gatewayUrl,
         changeOrigin: true,
       },
+      '/notifications': {
+        target: gatewayUrl,
+        changeOrigin: true,
+      },
       '/health': {
         target: gatewayUrl,
         changeOrigin: true,
