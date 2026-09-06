@@ -1,4 +1,5 @@
 import { trace } from "@opentelemetry/api";
+import { logs, SeverityNumber } from "@opentelemetry/api-logs";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -7,6 +8,13 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   info: 1,
   warn: 2,
   error: 3,
+};
+
+const SEVERITY_MAP: Record<LogLevel, SeverityNumber> = {
+  debug: SeverityNumber.DEBUG,
+  info: SeverityNumber.INFO,
+  warn: SeverityNumber.WARN,
+  error: SeverityNumber.ERROR,
 };
 
 export class Logger {
@@ -65,27 +73,72 @@ export class Logger {
     return JSON.stringify(payload);
   }
 
+  private emitOtelLog(
+    level: LogLevel,
+    message: string,
+    context?: Record<string, unknown>,
+    error?: unknown,
+  ): void {
+    try {
+      const otelLogger = logs.getLogger(this.serviceName);
+      const attributes: Record<string, string> = {
+        "service.name": this.serviceName,
+      };
+
+      if (context) {
+        for (const [k, v] of Object.entries(context)) {
+          if (v !== undefined && v !== null) {
+            attributes[`context.${k}`] = typeof v === "object" ? JSON.stringify(v) : String(v);
+          }
+        }
+      }
+
+      if (error) {
+        if (error instanceof Error) {
+          attributes["error.name"] = error.name;
+          attributes["error.message"] = error.message;
+          if (error.stack) attributes["error.stack"] = error.stack;
+        } else {
+          attributes["error.raw"] = typeof error === "object" ? JSON.stringify(error) : String(error);
+        }
+      }
+
+      otelLogger.emit({
+        severityNumber: SEVERITY_MAP[level],
+        severityText: level.toUpperCase(),
+        body: message,
+        attributes,
+      });
+    } catch {
+      // Fail-safe: OTel logging must never throw or break application flow
+    }
+  }
+
   debug(message: string, context?: Record<string, unknown>): void {
     if (this.shouldLog("debug")) {
       process.stdout.write(this.format("debug", message, context) + "\n");
+      this.emitOtelLog("debug", message, context);
     }
   }
 
   info(message: string, context?: Record<string, unknown>): void {
     if (this.shouldLog("info")) {
       process.stdout.write(this.format("info", message, context) + "\n");
+      this.emitOtelLog("info", message, context);
     }
   }
 
   warn(message: string, context?: Record<string, unknown>, error?: unknown): void {
     if (this.shouldLog("warn")) {
       process.stderr.write(this.format("warn", message, context, error) + "\n");
+      this.emitOtelLog("warn", message, context, error);
     }
   }
 
   error(message: string, error?: unknown, context?: Record<string, unknown>): void {
     if (this.shouldLog("error")) {
       process.stderr.write(this.format("error", message, context, error) + "\n");
+      this.emitOtelLog("error", message, context, error);
     }
   }
 }

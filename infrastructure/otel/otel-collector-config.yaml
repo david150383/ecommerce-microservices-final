@@ -1,6 +1,6 @@
 # OpenTelemetry Collector Configuration
-# For local development: outputs traces to container logs via the 'debug' exporter.
-# For production (e.g., Datadog, Honeycomb, etc.): configure and uncomment the respective exporter.
+# For local development: outputs traces & logs to container stdout via 'debug' exporter.
+# For Datadog APM & Logs: exports traces & logs to Datadog using DD_API_KEY and DD_SITE.
 
 receivers:
   otlp:
@@ -20,21 +20,17 @@ processors:
     spike_limit_percentage: 20
 
 exporters:
-  # Debug exporter (replaces legacy 'logging' exporter)
-  # Prints spans and telemetry to container stdout for viewing with:
-  #   docker logs -f ecommerce-otel-collector
+  # Debug exporter (prints traces & logs to container stdout)
   debug:
     verbosity: detailed
 
-  # ---------------------------------------------------------------------------
-  # DATADOG EXPORTER TEMPLATE (Uncomment when ready to export to Datadog)
-  # ---------------------------------------------------------------------------
-  # datadog:
-  #   api:
-  #     key: ${env:DD_API_KEY}
-  #     site: ${env:DD_SITE} # e.g. datadoghq.com or datadoghq.eu
-  #   traces:
-  #     span_name_as_resource_name: true
+  # Datadog exporter (sends traces & logs to Datadog backend)
+  datadog:
+    api:
+      key: ${env:DD_API_KEY}
+      site: ${env:DD_SITE}
+    traces:
+      span_name_as_resource_name: true
 
 extensions:
   health_check:
@@ -46,12 +42,11 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      # To enable Datadog, add 'datadog' to the exporters list below:
-      exporters: [debug]
-    # metrics:
-    #   receivers: [otlp]
-    #   processors: [memory_limiter, batch]
-    #   exporters: [debug]
+      exporters: [debug, datadog]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug, datadog]
   telemetry:
     logs:
       level: info

@@ -10,10 +10,14 @@ import {
   type SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { BatchLogRecordProcessor, type LogRecordProcessor } from "@opentelemetry/sdk-logs";
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 
 const serviceName = process.env.OTEL_SERVICE_NAME || "inventory-service";
 
 const spanProcessors: SpanProcessor[] = [];
+const logRecordProcessors: LogRecordProcessor[] = [];
+
 const configuredExporters = (process.env.OTEL_TRACES_EXPORTER || "none")
   .split(",")
   .map((e) => e.trim().toLowerCase())
@@ -23,6 +27,7 @@ for (const exporter of configuredExporters) {
   if (exporter === "otlp") {
     // Reads OTEL_EXPORTER_OTLP_ENDPOINT (e.g. http://otel-collector:4318) automatically
     spanProcessors.push(new BatchSpanProcessor(new OTLPTraceExporter()));
+    logRecordProcessors.push(new BatchLogRecordProcessor({ exporter: new OTLPLogExporter() }));
   } else if (exporter === "console") {
     spanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()));
   }
@@ -41,6 +46,7 @@ export const sdk = new NodeSDK({
     "deployment.environment": process.env.NODE_ENV || "development",
   }),
   spanProcessors,
+  ...(logRecordProcessors.length > 0 ? { logRecordProcessors } : {}),
   instrumentations: [getNodeAutoInstrumentations()],
 });
 

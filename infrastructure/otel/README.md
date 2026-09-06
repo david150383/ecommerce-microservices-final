@@ -7,10 +7,46 @@ Each Node.js microservice runs OpenTelemetry SDK instrumentation (`src/instrumen
 
 ---
 
-## 1. Viewing Traces in Local Development
-By default, the collector is configured with the `debug` exporter set to `verbosity: detailed`. All spans received from microservices will be formatted and logged directly to the collector container logs.
+## 1. Datadog APM Integration (Enabled)
+The collector pipeline is configured with both the `datadog` and `debug` exporters:
+- **`datadog`**: Sends traces and APM telemetry to the Datadog intake backend.
+- **`debug`**: Formats and prints traces to container stdout for local visibility (`docker logs -f ecommerce-otel-collector`).
 
-To view traces in real time:
+### Setting your Datadog API Key & Site
+Edit [infrastructure/env/otel-collector.env](file:///Users/sohin/new-rnd/ecommerce3/infrastructure/env/otel-collector.env):
+```env
+DD_API_KEY=your_32_character_datadog_api_key_here
+DD_SITE=datadoghq.com
+```
+
+> **Supported Datadog Sites**:
+> - `datadoghq.com` (US1 - default)
+> - `us3.datadoghq.com` (US3)
+> - `us5.datadoghq.com` (US5)
+> - `datadoghq.eu` (EU)
+> - `ap1.datadoghq.com` (AP1)
+
+You can also export them in your terminal before running docker compose:
+```bash
+export DD_API_KEY="your_api_key"
+export DD_SITE="datadoghq.com"
+```
+
+### Restarting the Collector
+After saving your `DD_API_KEY`, restart the collector:
+```bash
+docker compose -f infrastructure/docker-compose.yml up -d otel-collector
+```
+
+To verify that Datadog exporter connected cleanly:
+```bash
+docker logs -f ecommerce-otel-collector
+```
+
+---
+
+## 2. Viewing Traces in Local Development
+To view traces in real time directly in the collector logs:
 ```bash
 docker logs -f ecommerce-otel-collector
 ```
@@ -19,44 +55,7 @@ Each log block contains:
 - `Trace ID` and `Span ID` (propagated across services via standard W3C `traceparent` headers)
 - `Service Name` (e.g. `api-gateway`, `auth-service`, `product-service`)
 - HTTP method, route, status code, and latency
-- Attributes, events, and error status (if any)
-
----
-
-## 2. Switching to Datadog (or Other APM Providers)
-Because the collector runs the `otel/opentelemetry-collector-contrib` image, it includes built-in exporters for Datadog, Honeycomb, Dynatrace, New Relic, AWS X-Ray, Google Cloud, and more.
-
-### Enabling Datadog
-1. Open `infrastructure/otel/otel-collector-config.yaml`.
-2. Under `exporters`, uncomment the `datadog` section:
-   ```yaml
-   exporters:
-     datadog:
-       api:
-         key: ${env:DD_API_KEY}
-         site: ${env:DD_SITE} # e.g. datadoghq.com
-       traces:
-         span_name_as_resource_name: true
-   ```
-3. Under `service.pipelines.traces.exporters`, add `datadog`:
-   ```yaml
-   service:
-     pipelines:
-       traces:
-         receivers: [otlp]
-         processors: [memory_limiter, batch]
-         exporters: [debug, datadog] # You can keep or remove debug
-   ```
-4. Provide your Datadog credentials in `infrastructure/docker-compose.yml` under `otel-collector`'s `environment`:
-   ```yaml
-   environment:
-     - DD_API_KEY=${DD_API_KEY}
-     - DD_SITE=${DD_SITE:-datadoghq.com}
-   ```
-5. Restart the collector:
-   ```bash
-   docker compose -f infrastructure/docker-compose.yml restart otel-collector
-   ```
+- Attributes, events, exception stack traces, and database queries
 
 ---
 
