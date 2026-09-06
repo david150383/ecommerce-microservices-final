@@ -21,6 +21,7 @@ export interface ProductsPageResponse {
   data: Product[];
   pagination: {
     limit: number;
+    offset?: number;
     has_more: boolean;
     next_cursor: string | null;
     total?: number;
@@ -55,17 +56,25 @@ export const productsApi = {
     cursor?: string | null,
     category?: string,
     search?: string,
+    offset?: number,
+    status?: string,
   ): Promise<ProductsPageResponse> {
     const params = new URLSearchParams();
     params.set('limit', limit.toString());
     if (cursor) {
       params.set('cursor', cursor);
     }
+    if (offset !== undefined && offset !== null) {
+      params.set('offset', offset.toString());
+    }
     if (category && category !== 'ALL') {
       params.set('category', category);
     }
     if (search && search.trim()) {
       params.set('search', search.trim());
+    }
+    if (status && status !== 'ALL') {
+      params.set('status', status);
     }
     const res = await apiClient<any>(`/products?${params.toString()}`);
     const rawList = res.data?.products || (Array.isArray(res.data) ? res.data : []);
@@ -74,12 +83,14 @@ export const productsApi = {
       data: rawList.map(mapProduct),
       pagination: {
         limit: meta.limit ?? limit,
+        offset: meta.offset !== undefined ? Number(meta.offset) : offset,
         has_more: Boolean(meta.hasNextPage ?? meta.has_more),
         next_cursor: meta.nextCursor ?? meta.next_cursor ?? null,
-        total: meta.total,
+        total: meta.total !== undefined ? Number(meta.total) : undefined,
       },
     };
   },
+
 
   async getProductById(id: string): Promise<{ data: Product }> {
     const res = await apiClient<any>(`/products/${id}`);

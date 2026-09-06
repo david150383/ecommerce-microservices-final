@@ -1,25 +1,48 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Layers, Search, RefreshCw, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Layers, Search, RefreshCw, Loader2, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 import { productsApi, Product } from '../../api/products.api.ts';
 import { adminApi, InventoryRecord } from '../../api/admin.api.ts';
 import { RestockModal } from './RestockModal.tsx';
+import { Pagination } from '../common/Pagination.tsx';
 
 export const AdminInventoryManager: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [inventoryMap, setInventoryMap] = useState<Record<string, InventoryRecord>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
   const [restockProduct, setRestockProduct] = useState<Product | null>(null);
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      const offset = (currentPage - 1) * pageSize;
       const [prodsRes, invRes] = await Promise.all([
-        productsApi.getProducts(50, null),
+        productsApi.getProducts(
+          pageSize,
+          null,
+          undefined,
+          debouncedSearch || undefined,
+          offset,
+          'ALL',
+        ),
         adminApi.listAllInventory(),
       ]);
 
       setProducts(prodsRes.data || []);
+      setTotalItems(prodsRes.pagination?.total ?? (prodsRes.data?.length || 0));
 
       const invLookup: Record<string, InventoryRecord> = {};
       (invRes.data || []).forEach((inv) => {
@@ -31,17 +54,11 @@ export const AdminInventoryManager: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentPage, pageSize, debouncedSearch]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div>
@@ -63,34 +80,57 @@ export const AdminInventoryManager: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: '100%',
-              padding: '0.65rem 0.85rem 0.65rem 2.4rem',
+              padding: '0.65rem 2.4rem 0.65rem 2.4rem',
               borderRadius: 'var(--radius-md)',
               background: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
               color: 'var(--text-primary)',
               fontSize: '0.9rem',
               outline: 'none',
+              fontFamily: 'inherit',
             }}
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: 0,
+              }}
+              title="Clear search"
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button className="btn btn-secondary" onClick={fetchData} style={{ padding: '0.65rem' }}>
+          <button className="btn btn-secondary" onClick={fetchData} style={{ padding: '0.65rem' }} title="Refresh">
             <RefreshCw size={16} />
           </button>
         </div>
       </div>
 
+
       {/* Inventory Table */}
       <div className="glass-panel" style={{ overflowX: 'auto', padding: '0.5rem' }}>
         {isLoading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3.5rem', gap: '0.75rem' }}>
             <Loader2 size={32} color="#6366f1" className="animate-spin" />
-            <p style={{ color: 'var(--text-secondary)' }}>Querying stock levels from Inventory Service (:3004)...</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Querying stock levels from Inventory Service (:3004)...</p>
           </div>
-        ) : filteredProducts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-            No products found.
+        ) : products.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3.5rem', color: 'var(--text-muted)' }}>
+            No products found matching your search.
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
@@ -106,7 +146,7 @@ export const AdminInventoryManager: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredProducts.map((p) => {
+              {products.map((p) => {
                 const inv = inventoryMap[p.id];
                 const available = inv ? inv.available_quantity : 0;
                 const reserved = inv ? inv.reserved_quantity : 0;
@@ -171,6 +211,22 @@ export const AdminInventoryManager: React.FC = () => {
               })}
             </tbody>
           </table>
+        )}
+
+        {/* Number-Based Pagination */}
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            pageSizeOptions={[10, 20, 50, 100]}
+            onPageChange={(p) => setCurrentPage(p)}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+            isLoading={isLoading}
+          />
         )}
       </div>
 
