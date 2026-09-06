@@ -15,17 +15,38 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   // Default product visuals based on category
   const getProductImage = (category: string, name: string) => {
-    if (name.toLowerCase().includes('headphone') || category.toLowerCase().includes('audio')) {
+    const cat = category.toLowerCase();
+    const nm = name.toLowerCase();
+
+    if (cat.includes('computer') || nm.includes('laptop') || nm.includes('desktop') || nm.includes('ultrabook')) {
+      return 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&auto=format&fit=crop&q=80';
+    }
+    if (cat.includes('audio') || nm.includes('headphone') || nm.includes('speaker') || nm.includes('earbud')) {
       return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80';
     }
-    if (name.toLowerCase().includes('watch') || category.toLowerCase().includes('wearable')) {
+    if (cat.includes('wearable') || nm.includes('watch') || nm.includes('band') || nm.includes('ring')) {
       return 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80';
     }
-    if (name.toLowerCase().includes('keyboard') || name.toLowerCase().includes('mouse')) {
-      return 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&auto=format&fit=crop&q=80';
+    if (cat.includes('display') || nm.includes('monitor') || nm.includes('oled') || nm.includes('screen')) {
+      return 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&auto=format&fit=crop&q=80';
     }
-    if (name.toLowerCase().includes('laptop') || name.toLowerCase().includes('stand')) {
-      return 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&auto=format&fit=crop&q=80';
+    if (cat.includes('gaming') || nm.includes('game') || nm.includes('controller') || nm.includes('deck')) {
+      return 'https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?w=600&auto=format&fit=crop&q=80';
+    }
+    if (cat.includes('mobile') || nm.includes('phone') || nm.includes('smartphone') || nm.includes('cellular')) {
+      return 'https://images.unsplash.com/photo-1511707171634-5f897ff0252a?w=600&auto=format&fit=crop&q=80';
+    }
+    if (cat.includes('camera') || nm.includes('lens') || nm.includes('gimbal') || nm.includes('video')) {
+      return 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&auto=format&fit=crop&q=80';
+    }
+    if (cat.includes('storage') || nm.includes('ssd') || nm.includes('drive') || nm.includes('nvme')) {
+      return 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=600&auto=format&fit=crop&q=80';
+    }
+    if (cat.includes('smart') || nm.includes('plug') || nm.includes('hub') || nm.includes('sensor')) {
+      return 'https://images.unsplash.com/photo-1558002038-1055907df827?w=600&auto=format&fit=crop&q=80';
+    }
+    if (nm.includes('keyboard') || nm.includes('mouse') || cat.includes('accessories')) {
+      return 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&auto=format&fit=crop&q=80';
     }
     return 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=80';
   };

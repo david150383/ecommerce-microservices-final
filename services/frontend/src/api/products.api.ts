@@ -23,6 +23,7 @@ export interface ProductsPageResponse {
     limit: number;
     has_more: boolean;
     next_cursor: string | null;
+    total?: number;
   };
 }
 
@@ -49,11 +50,22 @@ export function mapProduct(p: any): Product {
 }
 
 export const productsApi = {
-  async getProducts(limit = 12, cursor?: string | null): Promise<ProductsPageResponse> {
+  async getProducts(
+    limit = 12,
+    cursor?: string | null,
+    category?: string,
+    search?: string,
+  ): Promise<ProductsPageResponse> {
     const params = new URLSearchParams();
     params.set('limit', limit.toString());
     if (cursor) {
       params.set('cursor', cursor);
+    }
+    if (category && category !== 'ALL') {
+      params.set('category', category);
+    }
+    if (search && search.trim()) {
+      params.set('search', search.trim());
     }
     const res = await apiClient<any>(`/products?${params.toString()}`);
     const rawList = res.data?.products || (Array.isArray(res.data) ? res.data : []);
@@ -64,6 +76,7 @@ export const productsApi = {
         limit: meta.limit ?? limit,
         has_more: Boolean(meta.hasNextPage ?? meta.has_more),
         next_cursor: meta.nextCursor ?? meta.next_cursor ?? null,
+        total: meta.total,
       },
     };
   },
@@ -74,3 +87,4 @@ export const productsApi = {
     return { data: mapProduct(raw) };
   },
 };
+
