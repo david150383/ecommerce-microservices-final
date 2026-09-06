@@ -9,7 +9,10 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,js,json}\""
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --runInBand --forceExit",
+    "test:unit": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --testPathPattern=tests/unit --runInBand --forceExit",
+    "test:integration": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --testPathPattern=tests/integration --runInBand --forceExit"
   },
   "keywords": [],
   "author": "",
@@ -18,10 +21,15 @@
     "@eslint/js": "^9.21.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/node": "^26.4.0",
+    "@types/supertest": "^7.2.1",
     "eslint": "^9.21.0",
     "eslint-config-prettier": "^10.0.1",
+    "jest": "^30.5.1",
     "prettier": "^3.5.2",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.12",
     "tsx": "^4.23.13",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.25.0"
