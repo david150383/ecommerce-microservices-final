@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Package, ShoppingBag, ShieldCheck, ArrowLeft, Users, Layers, Bell } from 'lucide-react';
+import { Package, ShoppingBag, ShieldCheck, ArrowLeft, Users, Layers, Bell, AlertTriangle } from 'lucide-react';
 import { AdminProductManager } from './AdminProductManager.tsx';
 import { AdminInventoryManager } from './AdminInventoryManager.tsx';
 import { AdminOrderMonitor } from './AdminOrderMonitor.tsx';
 import { AdminUserManager } from './AdminUserManager.tsx';
 import { AdminNotificationManager } from './AdminNotificationManager.tsx';
+import { useAuth } from '../../context/AuthContext.tsx';
 
 interface AdminDashboardProps {
   onReturnToStore: () => void;
@@ -12,7 +13,28 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onReturnToStore, onInspectSaga }) => {
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+
   const [activeTab, setActiveTab] = useState<'PRODUCTS' | 'INVENTORY' | 'ORDERS' | 'USERS' | 'NOTIFICATIONS'>('PRODUCTS');
+
+  if (!isAdmin) {
+    return (
+      <div style={{ maxWidth: '600px', margin: '6rem auto', textAlign: 'center', padding: '2.5rem 2rem' }} className="glass-panel">
+        <div style={{ display: 'inline-flex', padding: '1rem', borderRadius: '50%', background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', marginBottom: '1.25rem' }}>
+          <AlertTriangle size={36} />
+        </div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>Access Denied</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.75rem', fontSize: '0.95rem', lineHeight: 1.5 }}>
+          You do not have administrative privileges to access the Operations Console. This area is restricted to authorized administrators.
+        </p>
+        <button className="btn btn-primary" onClick={onReturnToStore} style={{ margin: '0 auto' }}>
+          <ArrowLeft size={16} />
+          <span>Return to Storefront</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '2rem' }}>

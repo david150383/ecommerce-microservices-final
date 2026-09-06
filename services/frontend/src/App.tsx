@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header.tsx';
 import { ObservabilityBanner } from './components/ObservabilityBanner.tsx';
 import { ProductGrid } from './components/ProductGrid.tsx';
@@ -8,14 +8,25 @@ import { SagaHistoryModal } from './components/SagaHistoryModal.tsx';
 import { NotificationDrawer } from './components/NotificationDrawer.tsx';
 import { AuthModal } from './components/AuthModal.tsx';
 import { AdminDashboard } from './components/admin/AdminDashboard.tsx';
+import { useAuth } from './context/AuthContext.tsx';
 import { ShieldCheck, Zap, Database, GitMerge } from 'lucide-react';
 
 export const App: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+
   const [activeView, setActiveView] = useState<'STORE' | 'ADMIN'>('STORE');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSagaHistoryOpen, setIsSagaHistoryOpen] = useState(false);
   const [activeSagaOrderId, setActiveSagaOrderId] = useState<string | null>(null);
+
+  // Automatically ensure non-admins cannot stay in ADMIN view
+  useEffect(() => {
+    if (activeView === 'ADMIN' && !isAdmin) {
+      setActiveView('STORE');
+    }
+  }, [activeView, isAdmin]);
 
   const handleOrderPlaced = (orderId: string) => {
     setActiveSagaOrderId(orderId);
@@ -26,14 +37,20 @@ export const App: React.FC = () => {
       {/* Sticky Top Header */}
       <Header
         activeView={activeView}
-        onToggleView={(view) => setActiveView(view)}
+        onToggleView={(view) => {
+          if (view === 'ADMIN' && !isAdmin) {
+            setIsAuthOpen(true);
+            return;
+          }
+          setActiveView(view);
+        }}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         onOpenSagaHistory={() => setIsSagaHistoryOpen(true)}
       />
 
       {/* Main Content Area */}
-      {activeView === 'ADMIN' ? (
+      {activeView === 'ADMIN' && isAdmin ? (
         <AdminDashboard
           onReturnToStore={() => setActiveView('STORE')}
           onInspectSaga={(orderId) => setActiveSagaOrderId(orderId)}

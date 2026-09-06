@@ -110,27 +110,29 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {/* Admin / Store Switcher */}
-          {activeView === 'STORE' ? (
-            <button
-              className="btn btn-secondary"
-              onClick={() => onToggleView('ADMIN')}
-              style={{ fontSize: '0.85rem', padding: '0.5rem 0.9rem', borderColor: 'rgba(236, 72, 153, 0.4)' }}
-              title="Switch to Admin Operations Console"
-            >
-              <ShieldCheck size={16} color="#ec4899" />
-              <span>Admin Console</span>
-            </button>
-          ) : (
-            <button
-              className="btn btn-primary"
-              onClick={() => onToggleView('STORE')}
-              style={{ fontSize: '0.85rem', padding: '0.5rem 0.9rem' }}
-              title="Return to Customer Storefront"
-            >
-              <ShoppingBag size={16} />
-              <span>Storefront</span>
-            </button>
+          {/* Admin / Store Switcher - Visible ONLY to authorized ADMIN users */}
+          {isAuthenticated && user?.role === 'ADMIN' && (
+            activeView === 'STORE' ? (
+              <button
+                className="btn btn-secondary"
+                onClick={() => onToggleView('ADMIN')}
+                style={{ fontSize: '0.85rem', padding: '0.5rem 0.9rem', borderColor: 'rgba(236, 72, 153, 0.4)' }}
+                title="Switch to Admin Operations Console"
+              >
+                <ShieldCheck size={16} color="#ec4899" />
+                <span>Admin Console</span>
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary"
+                onClick={() => onToggleView('STORE')}
+                style={{ fontSize: '0.85rem', padding: '0.5rem 0.9rem' }}
+                title="Return to Customer Storefront"
+              >
+                <ShoppingBag size={16} />
+                <span>Storefront</span>
+              </button>
+            )
           )}
 
           {/* Saga History Trigger */}
@@ -229,10 +231,24 @@ export const Header: React.FC<HeaderProps> = ({
                       Role: {user.role}
                     </div>
                   </div>
+                  {user.role === 'ADMIN' && (
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        onToggleView(activeView === 'ADMIN' ? 'STORE' : 'ADMIN');
+                        setUserDropdownOpen(false);
+                      }}
+                      style={{ justifyContent: 'flex-start', width: '100%', borderColor: 'rgba(236, 72, 153, 0.3)' }}
+                    >
+                      <ShieldCheck size={16} color="#ec4899" />
+                      <span>{activeView === 'ADMIN' ? 'Storefront View' : 'Admin Operations'}</span>
+                    </button>
+                  )}
                   <button
                     className="btn btn-secondary"
                     onClick={() => {
                       logout();
+                      onToggleView('STORE');
                       setUserDropdownOpen(false);
                     }}
                     style={{ justifyContent: 'flex-start', color: '#f43f5e', width: '100%' }}
